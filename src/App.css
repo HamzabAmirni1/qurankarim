@@ -937,12 +937,26 @@ footer {
 .rr-title-box h2 {
   margin: 0;
   font-family: 'Cairo', sans-serif;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary);
 }
 
-.rr-title-box span {
-  font-size: 0.85rem;
-  opacity: 0.7;
+.rr-meta-info {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.rr-badge {
+  background: rgba(4, 120, 87, 0.1);
+  color: var(--primary);
+  padding: 0.2rem 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(4, 120, 87, 0.2);
 }
 
 .font-control {
@@ -991,54 +1005,67 @@ footer {
 
 .quran-text-flow {
   flex: 1;
-  line-height: 2.2;
+  line-height: 2.8;
   text-align: justify;
-  text-align-last: center;
+  text-justify: inter-word;
   direction: rtl;
   font-family: 'Amiri', serif;
+  padding: 0 1rem;
 }
 
 .basmala-premium {
-  font-size: 1.5em;
-  margin-bottom: 2rem;
+  font-size: 1.8em;
+  margin-bottom: 3rem;
   text-align: center;
   color: var(--primary);
-  opacity: 0.9;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(4, 120, 87, 0.1);
+  padding-bottom: 1.5rem;
 }
 
 .ayah-unit {
   cursor: pointer;
   transition: all 0.2s ease;
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.4rem;
+  padding: 0 0.5rem;
+  border-radius: 0.5rem;
   display: inline-block;
+  white-space: normal;
 }
 
-.ayah-unit:hover { background: rgba(4, 120, 87, 0.1); }
-.ayah-unit.active-verse { background: rgba(4, 120, 87, 0.15); border: 1px solid var(--primary); }
+.ayah-unit:hover { background: rgba(4, 120, 87, 0.08); }
+.ayah-unit.active-verse { background: rgba(4, 120, 87, 0.12); color: var(--primary); font-weight: 700; }
 
-.ayah-end-ornament {
-  font-size: 0.8em;
-  font-weight: normal;
+.ayah-number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2em;
+  height: 2.2em;
+  border: 1.5px solid var(--primary);
+  border-radius: 50%;
+  font-size: 0.6em;
+  font-weight: 800;
+  margin: 0 0.5rem;
   color: var(--primary);
-  margin: 0 0.3rem;
-  opacity: 0.8;
+  vertical-align: middle;
+  transform: translateY(-2px);
+  background: rgba(4, 120, 87, 0.03);
 }
 
 .tafsir-side-panel {
   position: sticky;
-  top: 0;
-  width: 380px;
+  top: 2rem;
+  width: 400px;
   height: fit-content;
-  max-height: calc(100vh - 12rem);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 1.5rem;
-  padding: 2rem;
+  max-height: calc(100vh - 8rem);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  padding: 2.5rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
 }
 
 .theme-dark .tafsir-side-panel { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); }

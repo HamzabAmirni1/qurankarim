@@ -203,9 +203,9 @@ function App() {
     setReadingLoading(true);
     setSelectedTafsir(null);
     try {
-      const { data } = await axios.get(`${QURAN_TEXT_API}/surah/${surah.id}/ar.alafasy`);
+      const { data } = await axios.get(`${QURAN_TEXT_API}/surah/${surah.id}/quran-uthmani`);
       setSurahText(data.data);
-    } catch (e) { console.error(e); } finally { setReadingLoading(false); }
+    } catch (e) { console.error(e); notify('خطأ في تحميل النص', 'error'); } finally { setReadingLoading(false); }
   };
 
   const getAudioUrl = (surah, reciter) => {
@@ -460,7 +460,11 @@ function App() {
                 <button className="icon-btn-rr" onClick={() => setReadingSurah(null)} title="خروج"><X size={24} /></button>
                 <div className="rr-title-box">
                   <h2>{readingSurah.name}</h2>
-                  <span>{readingSurah.englishName || `Surah ${readingSurah.id}`}</span>
+                  <div className="rr-meta-info">
+                    <span className="rr-badge">{readingSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</span>
+                    <span className="rr-badge">{readingSurah.numberOfAyahs} آية</span>
+                    <span>{readingSurah.englishName}</span>
+                  </div>
                 </div>
               </div>
 
@@ -485,15 +489,23 @@ function App() {
                 <div className="reading-room-layout">
                   <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
                     {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
-                    {surahText?.ayahs.map(ayah => (
-                      <span 
-                        key={ayah.number} 
-                        className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
-                        onClick={() => saveBookmark(ayah)}
-                      >
-                        {ayah.text} <span className="ayah-end-ornament">﴿{ayah.numberInSurah}﴾</span>
-                      </span>
-                    ))}
+                    {surahText?.ayahs.map((ayah, index) => {
+                      let text = ayah.text;
+                      // Accurate Basmala stripping for Uthmani text
+                      const basmalaPrefix = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+                      if (index === 0 && ![1, 9].includes(readingSurah.id) && text.startsWith(basmalaPrefix)) {
+                        text = text.substring(basmalaPrefix.length).trim();
+                      }
+                      return (
+                        <span 
+                          key={ayah.number} 
+                          className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
+                          onClick={() => saveBookmark(ayah)}
+                        >
+                          {text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                   
                   <AnimatePresence>
