@@ -213,10 +213,13 @@ function App() {
       <header>
         <div className="header-brand">
           <div className="header-icon"><BookOpen size={32} fill="currentColor" /></div>
-          <h1>القرآن الكريم</h1>
+          <div>
+            <h1>القرآن الكريم</h1>
+            <p className="dev-credit">بإشراف المطور حمزة اعمرني</p>
+          </div>
         </div>
 
-        <div style={{ flex: 1, margin: '0 2rem', maxWidth: '600px', position: 'relative' }}>
+        <div className="header-search-container" style={{ flex: 1, margin: '0 2rem', maxWidth: '600px', position: 'relative' }}>
           <input 
             type="text" 
             placeholder="ابحث في القرآن..." 

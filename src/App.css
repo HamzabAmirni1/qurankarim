@@ -59,7 +59,9 @@ header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .header-brand {
@@ -75,6 +77,13 @@ header {
   -webkit-text-fill-color: initial;
   background: none;
   font-weight: 700;
+}
+
+.dev-credit {
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-top: -5px;
+  font-weight: 600;
 }
 
 [data-theme='dark'] .header-brand h1 {
@@ -537,6 +546,27 @@ footer {
 }
 
 @media (max-width: 768px) {
+  header {
+    padding: 1rem;
+    justify-content: center;
+  }
+  
+  .header-brand {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-search-container {
+    order: 3;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .hero-banner h2 {
+    font-size: 2.5rem;
+  }
+
   .social-grid {
     grid-template-columns: 1fr 1fr;
   }
