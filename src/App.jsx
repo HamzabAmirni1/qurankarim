@@ -11,10 +11,26 @@ import { supabase } from './supabase';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
-const QURAN_TEXT_API = 'https://api.alquran.cloud/v1';
-const TAFSIR_API = 'https://quranenc.com/api/v1/translation/aya/arabic_moyassar';
-const PRAYER_API = 'https://api.aladhan.com/v1/timingsByCity';
-const ADHKAR_URL = 'https://raw.githubusercontent.com/nawafalqari/azkar-api/master/azkar.json';
+const ADHKAR_URL = "https://raw.githubusercontent.com/nawafalqari/azkar-api/56df51279ab6eb86dc3579ffde8d9202571cdca2/azkar.json";
+const PRAYER_API = "https://api.aladhan.com/v1/timingsByCity";
+const TAFSIR_API = "https://quranenc.com/api/v1/translation/aya/arabic_moyassar";
+const QURAN_TEXT_API = "https://api.alquran.cloud/v1";
+
+const DUAS_DATA = {
+  "أدعية قرآنية": [
+    { text: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", src: "سورة البقرة" },
+    { text: "رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِنْ لَدُنْكَ رَحْمَةً إِنَّكَ أَنْتَ الْوَهَّابُ", src: "سورة آل عمران" },
+    { text: "رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاءِ", src: "سورة إبراهيم" }
+  ],
+  "أدعية الاستغفار": [
+    { text: "اللَّهُمَّ أَنْتَ رَبِّي لا إِلَهَ إِلا أَنْتَ ، خَلَقْتَنِي وَأَنَا عَبْدُكَ ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ", src: "سيد الاستغفار" },
+    { text: "رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ", src: "سنن أبي داود" }
+  ],
+  "أدعية تيسير الأمور": [
+    { text: "اللَّهُمَّ لا سَهْلَ إِلا مَا جَعَلْتَهُ سَهْلاً ، وَأَنْتَ تَجْعَلُ الْحَزْنَ إِذَا شِئْتَ سَهْلاً", src: "صحيح ابن حبان" },
+    { text: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ أَصْلِحْ لِي شَأْنِي كُلَّهُ وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ", src: "الترمذي" }
+  ]
+};
 
 const SOCIAL_LINKS = [
   { name: 'قناة الواتساب', icon: <MessageCircle size={18} />, url: 'https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p' },
@@ -191,10 +207,13 @@ function App() {
   };
 
   const saveBookmark = async (ayah) => {
-    const bookmarkData = { surahId: readingSurah.id, surahName: readingSurah.name, ayahNumber: ayah.numberInSurah, timestamp: Date.now() };
-    setLastRead(bookmarkData);
-    localStorage.setItem('lastRead', JSON.stringify(bookmarkData));
-    if (user) await supabase.from('user_data').update({ last_read: bookmarkData }).eq('user_id', user.id);
+    const data = { surahId: readingSurah.id, surahName: readingSurah.name, ayahNumber: ayah.numberInSurah };
+    setLastRead(data);
+    localStorage.setItem('lastReadBook', JSON.stringify(data));
+    notify(`تم حفظ مكانك في سورة ${readingSurah.name} - آية ${ayah.numberInSurah}`, 'success');
+    if (user) {
+      await supabase.from('profiles').update({ last_read: data }).eq('id', user.id);
+    }
     fetchTafsir(readingSurah.id, ayah.numberInSurah);
   };
 
@@ -273,10 +292,15 @@ function App() {
           <input type="text" placeholder="ابحث في القرآن..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         </div>
-
+          
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {lastRead && (
+            <button className="resume-header-btn" onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}>
+              <Bookmark size={18} /> استكمال القراءة
+            </button>
+          )}
           <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+            {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
           </button>
           
           <div className="auth-bar">
@@ -324,6 +348,7 @@ function App() {
           <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة</div>
           <div className={`tab ${activeTab === 'tafsir' ? 'active' : ''}`} onClick={() => setActiveTab('tafsir')}>تفسير السور</div>
           <div className={`tab ${activeTab === 'adhkar' ? 'active' : ''}`} onClick={() => setActiveTab('adhkar')}>الأذكار</div>
+          <div className={`tab ${activeTab === 'duas' ? 'active' : ''}`} onClick={() => setActiveTab('duas')}>أدعية مختارة</div>
           <div className={`tab ${activeTab === 'prayers' ? 'active' : ''}`} onClick={() => setActiveTab('prayers')}>مواقيت الصلاة</div>
           <div className={`tab ${activeTab === 'help' ? 'active' : ''}`} onClick={() => setActiveTab('help')}>كيفية الاستخدام</div>
         </nav>
@@ -404,6 +429,28 @@ function App() {
                     <small className="zikr-src">{zikr.description || 'مصدر موثوق'}</small>
                   </div>
                 </motion.div>
+              ))}
+            </div>
+          </div>
+        ) : activeTab === 'duas' ? (
+          <div className="duas-section">
+            <div className="adhkar-grid">
+              {Object.entries(DUAS_DATA).map(([category, items]) => (
+                <div key={category} className="dua-category-group">
+                  <h2 className="dua-cat-title">{category}</h2>
+                  <div className="adhkar-grid">
+                    {items.map((dua, i) => (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={i} className="card zikr-card dua-card-premium">
+                        <div className="zikr-content-box">
+                          <p style={{ fontSize: '1.4rem', lineHeight: '2' }}>{dua.text}</p>
+                        </div>
+                        <div className="zikr-footer">
+                          <small className="zikr-src">{dua.src}</small>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
