@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Play, Pause, Download, Volume2, Search, Heart, Share2, LoadingSpin } from 'lucide-react';
+import { Play, Pause, Download, Volume2, Search, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './App.css';
 
@@ -115,7 +115,12 @@ function App() {
 
   const filteredSurahs = surahs.filter(s => s.name.includes(searchQuery));
 
-  if (loading) return <div className="loading-spinner"></div>;
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem' }}>
+      <Loader2 className="animate-spin" size={48} color="var(--primary)" />
+      <p>جاري التحميل...</p>
+    </div>
+  );
 
   return (
     <div className="app-container">
