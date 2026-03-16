@@ -4,7 +4,7 @@ import {
   Play, Pause, Download, Search, Loader2, 
   Heart, BookOpen, User, X, Moon, Sun, 
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark,
-  Sunrise, Sunset, MoonStar, Info, BookCheck
+  Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './supabase';
@@ -27,6 +27,10 @@ const SOCIAL_LINKS = [
   { name: 'يوتيوب', icon: <Youtube size={18} />, url: 'https://www.youtube.com/@Hamzaamirni01' },
   { name: 'تلغرام', icon: <Send size={18} />, url: 'https://t.me/hamzaamirni' },
   { name: 'موقعي الشخصي', icon: <Globe size={18} />, url: 'https://hamzaamirni.netlify.app' }
+];
+
+const MOROCCAN_CITIES = [
+  "Casablanca", "Rabat", "Fes", "Marrakesh", "Tangier", "Agadir", "Meknes", "Oujda", "Kenitra", "Tetouan", "Safi", "Mohammedia", "Temara", "El Jadida", "Nador", "Taza", "Settat", "Larache", "Ksar El Kebir", "Khemisset", "Guelmim", "Berrechid", "Ouarzazate", "Taroudant", "Dakhla", "Khouribga", "Beni Mellal", "Tiznit", "Errachidia"
 ];
 
 function App() {
@@ -106,11 +110,28 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
-  const fetchPrayerTimes = async () => {
+  const fetchPrayerTimes = async (customCity = city) => {
     try {
-      const { data } = await axios.get(`${PRAYER_API}?city=${city}&country=Morocco&method=3`);
+      const { data } = await axios.get(`${PRAYER_API}?city=${customCity}&country=Morocco&method=3`);
       setPrayerTimes(data.data.timings);
+      setCity(customCity);
+      localStorage.setItem('city', customCity);
     } catch (e) { console.error(e); }
+  };
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) return alert('متصفحك لا يدعم تحديد الموقع');
+    
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        // Using Aladhan's coord to timing API directly
+        const { data } = await axios.get(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=3`);
+        setPrayerTimes(data.data.timings);
+        // Simple heuristic to set city name if possible, or just stay as is
+        setCity("الموقع الحالي"); 
+      } catch (e) { console.error(e); }
+    }, () => alert('يرجى السماح بالوصول للموقع ليتم التحديد تلقائياً'));
   };
 
   const fetchAdhkar = async () => {
@@ -347,10 +368,22 @@ function App() {
         ) : (
           <div className="prayer-times-section">
             <div className="card city-selector">
-              <label className="label">اختر المدينة</label>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Casablanca, Rabat..." />
-                <button className="login-btn" onClick={fetchPrayerTimes}>تحديث</button>
+              <label className="label">اختيار المدينة</label>
+              <div className="city-input-group">
+                <input 
+                  list="moroccan-cities"
+                  type="text" 
+                  value={city} 
+                  onChange={(e) => setCity(e.target.value)} 
+                  placeholder="ابحث عن مدينة (مثلاً: Casablanca)" 
+                />
+                <datalist id="moroccan-cities">
+                  {MOROCCAN_CITIES.map(c => <option key={c} value={c} />)}
+                </datalist>
+                <button className="login-btn" onClick={() => fetchPrayerTimes(city)}>تحديث</button>
+                <button className="theme-toggle" title="تحديد موقعي" onClick={detectLocation} style={{ background: 'var(--primary)', color: '#fff', borderRadius: '8px', padding: '0.6rem' }}>
+                  <MapPin size={22} />
+                </button>
               </div>
             </div>
             {prayerTimes && (
