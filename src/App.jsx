@@ -6,13 +6,7 @@ import {
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { auth, googleProvider, db } from './firebase';
-import { 
-  signInWithPopup, signOut, onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  doc, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot 
-} from 'firebase/firestore';
+import { supabase } from './supabase';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
@@ -63,27 +57,38 @@ function App() {
     fetchReciters();
     fetchSurahs();
     
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const favRef = doc(db, 'users', currentUser.uid);
-        onSnapshot(favRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setFavorites(data.favorites || []);
-            if (data.lastRead) {
-              setLastRead(data.lastRead);
-              localStorage.setItem('lastRead', JSON.stringify(data.lastRead));
-            }
-          } else {
-            setDoc(favRef, { favorites: [], lastRead: null });
-          }
-        });
+    // Supabase Auth Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      } else {
+        setFavorites([]);
+        setLastRead(null);
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserData = async (userId) => {
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (data) {
+      setFavorites(data.favorites || []);
+      setLastRead(data.last_read || null);
+      if (data.last_read) {
+        localStorage.setItem('lastRead', JSON.stringify(data.last_read));
+      }
+    } else if (error && error.code === 'PGRST116') {
+      // Create record if doesn't exist
+      await supabase.from('user_data').insert([{ user_id: userId, favorites: [], last_read: null }]);
+    }
+  };
 
   const fetchReciters = async () => {
     try {
@@ -101,17 +106,29 @@ function App() {
   };
 
   const login = async () => {
-    try { await signInWithPopup(auth, googleProvider); } catch (error) { console.error(error); }
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
   };
+
+  const logout = () => supabase.auth.signOut();
 
   const toggleFavorite = async (surahId) => {
     if (!user) { login(); return; }
-    const favRef = doc(db, 'users', user.uid);
+    
+    let newFavorites;
     if (favorites.includes(surahId)) {
-      await updateDoc(favRef, { favorites: arrayRemove(surahId) });
+      newFavorites = favorites.filter(id => id !== surahId);
     } else {
-      await updateDoc(favRef, { favorites: arrayUnion(surahId) });
+      newFavorites = [...favorites, surahId];
     }
+
+    setFavorites(newFavorites);
+    await supabase
+      .from('user_data')
+      .update({ favorites: newFavorites })
+      .eq('user_id', user.id);
   };
 
   const saveBookmark = async (ayah) => {
@@ -124,7 +141,10 @@ function App() {
     setLastRead(bookmarkData);
     localStorage.setItem('lastRead', JSON.stringify(bookmarkData));
     if (user) {
-      await updateDoc(doc(db, 'users', user.uid), { lastRead: bookmarkData });
+      await supabase
+        .from('user_data')
+        .update({ last_read: bookmarkData })
+        .eq('user_id', user.id);
     }
   };
 
@@ -204,8 +224,8 @@ function App() {
           <div className="auth-bar">
             {user ? (
               <div className="user-info">
-                <img src={user.photoURL} className="user-avatar" alt="User" />
-                <button onClick={() => signOut(auth)} className="logout-btn">خروج</button>
+                <img src={user.user_metadata.avatar_url} className="user-avatar" alt="User" />
+                <button onClick={logout} className="logout-btn">خروج</button>
               </div>
             ) : (
               <button onClick={login} className="login-btn"><User size={20} /> دخول</button>
