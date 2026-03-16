@@ -253,7 +253,7 @@ function App() {
 
       <section className="hero-banner">
         <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>القرآن الكريم</motion.h2>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>اقرأ كتاب الله الكريم بطريقة سهلة ومريحة</motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>{"وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا"}</motion.p>
       </section>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>

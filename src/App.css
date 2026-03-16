@@ -3,23 +3,23 @@
   --bg-black: #000000;
   --bg-card: #0a0a0a;
   --text-main: #ffffff;
-  --text-muted: #9ca3af;
-  --border: #1f2937;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
   --header-bg: #000000;
-  --input-bg: #111827;
+  --input-bg: #1e293b;
   --hero-bg: #000000;
 }
 
 [data-theme='light'] {
-  --bg-dark: #f9fafb;
+  --bg-dark: #fcfcfc;
   --bg-black: #ffffff;
   --bg-card: #ffffff;
-  --text-main: #111827;
-  --text-muted: #6b7280;
-  --border: #e5e7eb;
+  --text-main: #064e3b; /* Deep green text for light mode */
+  --text-muted: #64748b;
+  --border: #f1f5f9;
   --header-bg: #ffffff;
-  --input-bg: #f3f4f6;
-  --hero-bg: #16a34a;
+  --input-bg: #f8fafc;
+  --hero-bg: var(--primary);
 }
 
 * {
@@ -30,9 +30,9 @@
 }
 
 :root {
-  --primary: #16a34a;
-  --primary-hover: #15803d;
-  --primary-glow: rgba(22, 163, 74, 0.2);
+  --primary: #047857; /* Deep Emerald Green */
+  --primary-hover: #065f46;
+  --primary-glow: rgba(4, 120, 87, 0.2);
 }
 
 body {
@@ -94,6 +94,12 @@ header {
   color: var(--primary);
   display: flex;
   align-items: center;
+  filter: drop-shadow(0 0 10px var(--primary-glow));
+}
+
+.header-icon svg {
+  width: 45px;
+  height: 45px;
 }
 
 /* Hero Section */
@@ -240,6 +246,10 @@ select, input {
   font-size: 1rem;
   outline: none;
   transition: all 0.2s;
+}
+
+[data-theme='light'] select, [data-theme='light'] input {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
 
 select:focus, input:focus {
