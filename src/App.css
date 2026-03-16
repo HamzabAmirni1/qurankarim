@@ -49,6 +49,10 @@ body {
   padding: 2rem;
 }
 
+@media (max-width: 600px) {
+  .app-container { padding: 1rem; }
+}
+
 header {
   display: flex;
   justify-content: space-between;
@@ -102,7 +106,12 @@ header {
   height: 45px;
 }
 
-/* Hero Section */
+@media (max-width: 480px) {
+  .header-brand h1 { font-size: 1.4rem; }
+  .header-icon svg { width: 35px; height: 35px; }
+  .auth-bar { padding: 0.3rem 0.6rem; gap: 0.5rem; }
+  .user-avatar { width: 30px; height: 30px; }
+}
 .hero-banner {
   background-color: var(--hero-bg);
   color: #fff;
@@ -113,7 +122,7 @@ header {
 
 .hero-banner h2 {
   font-size: 4rem;
-  font-family: 'Amiri', serif;
+  font-family: 'Scheherazade New', serif;
   margin-bottom: 1rem;
 }
 
@@ -258,17 +267,24 @@ header {
 /* Tabs */
 .tabs {
   display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
   margin-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
+.tabs::-webkit-scrollbar { display: none; }
+
 .tab {
-  padding: 1rem 0;
+  padding: 1rem 0.5rem;
   color: var(--text-muted);
   cursor: pointer;
   position: relative;
-  font-weight: 600;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .tab.active {
@@ -339,7 +355,11 @@ select:focus, input:focus {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
-  padding-bottom: 100px;
+  padding-bottom: 120px;
+}
+
+@media (max-width: 600px) {
+  .surahs-grid { grid-template-columns: 1fr; gap: 1rem; }
 }
 
 .surah-card {
@@ -415,13 +435,21 @@ select:focus, input:focus {
   left: 0;
   right: 0;
   background: var(--header-bg);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  padding: 1rem 2rem;
+  backdrop-filter: blur(25px);
+  border-top: 2px solid var(--border);
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 1000;
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 480px) {
+  .player-bar { padding: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+  .progress-container { display: none; }
+  .player-info { width: 100%; text-align: center; font-size: 0.8rem; }
+  .player-controls { width: 100%; justify-content: center; }
 }
 
 .player-controls {
@@ -501,7 +529,7 @@ select:focus, input:focus {
   overflow-y: auto;
   padding: 2.5rem;
   line-height: 2.8;
-  font-family: 'Amiri', serif;
+  font-family: 'Scheherazade New', serif;
   font-size: 2rem;
   text-align: center;
 }
@@ -589,7 +617,7 @@ footer {
 }
 
 .dev-info h3 {
-  font-family: 'Amiri', serif;
+  font-family: 'Scheherazade New', serif;
   font-size: 1.8rem;
   margin-bottom: 1rem;
 }
@@ -753,7 +781,7 @@ footer {
 }
 
 .original-ayah {
-  font-family: 'Amiri', serif;
+  font-family: 'Scheherazade New', serif;
   font-size: 1.3rem;
   margin-bottom: 1rem;
   color: var(--primary);
@@ -815,8 +843,8 @@ footer {
 }
 
 .original-ayah-large {
-  font-family: 'Amiri', serif;
-  font-size: 2.2rem;
+  font-family: 'Scheherazade New', serif;
+  font-size: 2.4rem;
   line-height: 1.8;
   margin-bottom: 2rem;
   padding: 2rem;
@@ -1009,7 +1037,7 @@ footer {
   text-align: justify;
   text-justify: inter-word;
   direction: rtl;
-  font-family: 'Amiri', serif;
+  font-family: 'Scheherazade New', serif;
   padding: 0 1rem;
 }
 
@@ -1021,6 +1049,7 @@ footer {
   font-weight: 700;
   border-bottom: 2px solid rgba(4, 120, 87, 0.1);
   padding-bottom: 1.5rem;
+  font-family: 'Scheherazade New', serif;
 }
 
 .ayah-unit {
@@ -1082,11 +1111,11 @@ footer {
 .ts-header h3 { margin: 0; font-size: 1.2rem; font-weight: 800; }
 
 .ts-ayah-text {
-  font-size: 1.1rem;
-  font-style: italic;
-  opacity: 0.8;
+  font-size: 1.3rem;
+  font-family: 'Scheherazade New', serif;
+  opacity: 0.9;
   margin-bottom: 1.5rem;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 .ts-divider { height: 1px; background: currentColor; opacity: 0.1; margin: 1.5rem 0; }
@@ -1179,66 +1208,36 @@ footer {
   gap: 1rem;
   font-weight: 600;
 }
-
-@media (max-width: 768px) {
-  .help-content-grid { grid-template-columns: 1fr; }
-  .help-card { padding: 1.5rem; }
-  .quran-text-container-premium { padding: 1.5rem; border-radius: 1rem; }
-}
-
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
   .reading-room-layout { flex-direction: column; }
-  .tafsir-side-panel { width: 100%; position: relative; max-height: none; top: 0; }
-  .reading-room-header { 
-    flex-direction: column; 
-    gap: 1.5rem; 
-    padding: 1.5rem;
-    height: auto;
-  }
-  .rr-controls-right {
-    width: 100%;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(0,0,0,0.05);
-  }
-}
-
-@media (max-width: 600px) {
-  .quran-text-flow { font-size: 1.2rem !important; line-height: 2.2; }
-  .rr-title-box h2 { font-size: 1.4rem; }
-  .rr-meta-info { font-size: 0.8rem; gap: 0.5rem; flex-wrap: wrap; }
-  .reading-room-body { padding: 2rem 1rem; }
+  .tafsir-side-panel { width: 100%; position: relative; max-height: none; top: 0; padding: 1.5rem; }
+  .reading-room-header { flex-direction: column; gap: 1.5rem; padding: 1.5rem; height: auto; }
+  .rr-controls-right { width: 100%; justify-content: space-between; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.05); }
 }
 
 @media (max-width: 768px) {
+  .help-content-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .help-card { padding: 1.5rem; }
+  .quran-text-container-premium { padding: 1.5rem; border-radius: 1.5rem; }
   .grid-2 { grid-template-columns: 1fr; }
-  .tafsir-results { padding: 1.5rem; }
-  .original-ayah-large { font-size: 1.6rem; padding: 1rem; }
-  
-  header {
-    padding: 1rem;
-    justify-content: center;
-  }
-  
-  .header-brand {
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-  }
+  .tafsir-results { padding: 1rem; }
+  .original-ayah-large { font-size: 1.8rem; padding: 1.5rem; }
+  .hero-banner { padding: 3rem 1rem; }
+  .hero-banner h2 { font-size: 2.8rem; }
+  header { padding: 1rem; justify-content: center; }
+  .header-brand { width: 100%; justify-content: center; margin-bottom: 0.5rem; }
+  .header-search-container { order: 3; margin: 0 !important; max-width: 100% !important; }
+  .social-grid { grid-template-columns: 1fr 1fr; }
+  .city-input-group { flex-direction: column; align-items: stretch; }
+  .prayer-cards { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+}
 
-  .header-search-container {
-    order: 3;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-  .hero-banner h2 {
-    font-size: 2.5rem;
-  }
-
-  .social-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+@media (max-width: 480px) {
+  .prayer-cards { grid-template-columns: 1fr; }
+  .quran-text-flow { font-size: 1.3rem !important; line-height: 2.4; }
+  .rr-meta-info { font-size: 0.75rem; gap: 0.4rem; justify-content: center; }
+  .rr-title-box h2 { font-size: 1.3rem; }
+  .rr-controls-right { flex-direction: column; gap: 1rem; }
 }
 
 /* Notification Toast */
