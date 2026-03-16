@@ -11,10 +11,20 @@ import { supabase } from './supabase';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
-const ADHKAR_URL = "https://raw.githubusercontent.com/nawafalqari/azkar-api/56df51279ab6eb86dc3579ffde8d9202571cdca2/azkar.json";
-const PRAYER_API = "https://api.aladhan.com/v1/timingsByCity";
-const TAFSIR_API = "https://quranenc.com/api/v1/translation/aya/arabic_moyassar";
-const QURAN_TEXT_API = "https://api.alquran.cloud/v1";
+const HISN_AL_MUSLIM = {
+  "أذكار الصباح": [
+    { content: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لا إِلَهَ إِلا اللَّهُ وَحْدَهُ لا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", count: 1, ref: "مسلم" },
+    { content: "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ", count: 1, ref: "الترمذي" },
+    { content: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ أَصْلِحْ لِي شَأْنِي كُلَّهُ وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ", count: 1, ref: "الحاكم (صحيح)" }
+  ],
+  "أذكار المساء": [
+    { content: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لا إِلَهَ إِلا اللَّهُ وَحْدَهُ لا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", count: 1, ref: "مسلم" },
+    { content: "اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ", count: 1, ref: "الترمذي" }
+  ],
+  "أذكار النوم": [
+    { content: "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي، وَبِكَ أَرْفَعُهُ، فَإِنْ أَمْسَكْتَ نَفْسِي فَارْحَمْهَا، وَإِنْ أَرْسَلْتَهَا فَاحْفَظْهَا، بِمَا تَحْفَظُ بِهِ عِبَادَكَ الصَّالِحِينَ", count: 1, ref: "البخاري ومسلم" }
+  ]
+};
 
 const DUAS_DATA = {
   "أدعية قرآنية": [
@@ -419,6 +429,31 @@ function App() {
               ))}
             </div>
             <div className="adhkar-grid">
+              {/* Authenticated Hisn Al Muslim Section */}
+              <div className="dua-category-group">
+                <h2 className="dua-cat-title">حصن المسلم (موثق)</h2>
+                <div className="adhkar-grid">
+                  {Object.entries(HISN_AL_MUSLIM).map(([cat, items]) => (
+                    <div key={cat} style={{ gridColumn: '1/-1' }}>
+                      <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', opacity: 0.8 }}>{cat}</h3>
+                      <div className="adhkar-grid">
+                        {items.map((item, i) => (
+                          <motion.div key={i} className="card zikr-card authenticated-zikr">
+                            <p style={{ fontSize: '1.2rem', fontFamily: 'Scheherazade New' }}>{item.content}</p>
+                            <div className="zikr-footer">
+                              <div className="zikr-badge">التكرار: {item.count}</div>
+                              <small className="zikr-src">المصدر: {item.ref}</small>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="ts-divider" style={{ gridColumn: '1/-1', margin: '3rem 0' }}></div>
+
               {selectedAdhkarCategory && adhkar[selectedAdhkarCategory].map((zikr, idx) => (
                 <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }} key={idx} className="card zikr-card">
                   <div className="zikr-content-box">

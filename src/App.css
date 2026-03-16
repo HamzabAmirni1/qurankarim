@@ -1013,6 +1013,22 @@ footer {
   opacity: 0.8;
 }
 
+.authenticated-zikr {
+  border: 1px solid var(--primary);
+  background: rgba(4, 120, 87, 0.02);
+  box-shadow: 0 5px 15px rgba(4, 120, 87, 0.05);
+}
+
+.theme-dark .authenticated-zikr {
+  background: rgba(4, 120, 87, 0.05);
+  border-color: rgba(4, 120, 87, 0.3);
+}
+
+.authenticated-zikr .zikr-badge {
+  background: var(--primary);
+  color: #fff;
+}
+
 .rr-badge {
   background: rgba(4, 120, 87, 0.1);
   color: var(--primary);
