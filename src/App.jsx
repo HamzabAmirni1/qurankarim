@@ -1,10 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Play, Pause, Download, Volume2, Search, Loader2 } from 'lucide-react';
+import { 
+  Play, Pause, Download, Volume2, Search, Loader2, 
+  Heart, BookOpen, LogOut, User, X, Globe 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { auth, googleProvider, db } from './firebase';
+import { 
+  signInWithPopup, signOut, onAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot 
+} from 'firebase/firestore';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
+const QURAN_TEXT_API = 'https://api.alquran.cloud/v1';
 
 function App() {
   const [reciters, setReciters] = useState([]);
@@ -16,19 +27,48 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'favorites'
+  
+  // Auth state
+  const [user, setUser] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+
+  // Reading mode state
+  const [readingSurah, setReadingSurah] = useState(null);
+  const [surahText, setSurahText] = useState(null);
+  const [readingLoading, setReadingLoading] = useState(false);
 
   const audioRef = useRef(new Audio());
 
   useEffect(() => {
     fetchReciters();
     fetchSurahs();
+    
+    // Auth listener
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Listen to favorites
+        const favRef = doc(db, 'users', currentUser.uid);
+        onSnapshot(favRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setFavorites(docSnap.data().favorites || []);
+          } else {
+            setDoc(favRef, { favorites: [] });
+          }
+        });
+      } else {
+        setFavorites([]);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchReciters = async () => {
     try {
       const response = await axios.get(`${API_BASE}/reciters?language=ar`);
       setReciters(response.data.reciters);
-      // Default to Mishary Rashid Alafasy if found
       const defaultReciter = response.data.reciters.find(r => r.name.includes('العفاسي')) || response.data.reciters[0];
       setSelectedReciter(defaultReciter);
     } catch (error) {
@@ -47,26 +87,49 @@ function App() {
     }
   };
 
-  const handleReciterChange = (e) => {
-    const reciter = reciters.find(r => r.id === parseInt(e.target.value));
-    setSelectedReciter(reciter);
-    if (currentSurah) {
-      playSurah(currentSurah, reciter);
+  const login = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  };
+
+  const logout = () => signOut(auth);
+
+  const toggleFavorite = async (surahId) => {
+    if (!user) {
+      login();
+      return;
+    }
+    const favRef = doc(db, 'users', user.uid);
+    if (favorites.includes(surahId)) {
+      await updateDoc(favRef, { favorites: arrayRemove(surahId) });
+    } else {
+      await updateDoc(favRef, { favorites: arrayUnion(surahId) });
+    }
+  };
+
+  const openReadingMode = async (surah) => {
+    setReadingSurah(surah);
+    setReadingLoading(true);
+    try {
+      const response = await axios.get(`${QURAN_TEXT_API}/surah/${surah.id}/ar.alafasy`);
+      setSurahText(response.data.data);
+    } catch (error) {
+      console.error('Error fetching surah text:', error);
+    } finally {
+      setReadingLoading(false);
     }
   };
 
   const getAudioUrl = (surah, reciter) => {
     if (!reciter || !reciter.moshaf) return null;
-    
-    // Find a moshaf that contains this surah index
     const moshaf = reciter.moshaf.find(m => {
       const allowedSurahs = m.surah_list.split(',').map(Number);
       return allowedSurahs.includes(surah.id);
     }) || reciter.moshaf[0];
-
-    const server = moshaf.server;
-    const surahId = surah.id.toString().padStart(3, '0');
-    return `${server}${surahId}.mp3`;
+    return `${moshaf.server}${surah.id.toString().padStart(3, '0')}.mp3`;
   };
 
   const playSurah = (surah, reciter = selectedReciter) => {
@@ -87,10 +150,7 @@ function App() {
   const downloadSurah = async (surah) => {
     const audioUrl = getAudioUrl(surah, selectedReciter);
     if (!audioUrl) return;
-
     try {
-      // Create a button with a proper download attribute
-      // For some servers, we might need a direct proxy or blob fetch if they block direct download
       const response = await fetch(audioUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -102,72 +162,71 @@ function App() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      // Fallback if fetch fails (CORS issues)
       window.open(audioUrl, '_blank');
     }
   };
 
   useEffect(() => {
     const audio = audioRef.current;
-    
     const updateProgress = () => {
-      const p = (audio.currentTime / audio.duration) * 100;
-      setProgress(p || 0);
+      setProgress((audio.currentTime / audio.duration) * 100 || 0);
       setDuration(audio.duration || 0);
     };
-
     audio.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('ended', () => setIsPlaying(false));
-    
-    return () => {
-      audio.removeEventListener('timeupdate', updateProgress);
-    };
+    return () => audio.removeEventListener('timeupdate', updateProgress);
   }, []);
 
   const handleProgressChange = (e) => {
     const rect = e.target.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const width = rect.width;
-    const p = x / width;
+    const p = (e.clientX - rect.left) / rect.width;
     audioRef.current.currentTime = p * audioRef.current.duration;
   };
 
-  const filteredSurahs = surahs.filter(s => s.name.includes(searchQuery));
+  const filteredSurahs = surahs
+    .filter(s => s.name.includes(searchQuery))
+    .filter(s => activeTab === 'all' || favorites.includes(s.id));
 
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', color: '#fff' }}>
+    <div className="loading-container">
       <Loader2 className="animate-spin" size={48} color="var(--primary)" />
-      <p style={{ fontFamily: 'Cairo' }}>جاري تحميل البيانات...</p>
-    </div>
-  );
-
-  if (reciters.length === 0 && !loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', color: '#fff' }}>
-      <h2>عذراً، تعذر تحميل البيانات</h2>
-      <p>يرجى التحقق من اتصال الإنترنت أو المحاولة لاحقاً</p>
-      <button onClick={() => window.location.reload()} className="action-btn" style={{ padding: '0.5rem 1rem' }}>إعادة المحاولة</button>
+      <p>جاري تحميل تطبيق القرآن الكريم...</p>
     </div>
   );
 
   return (
     <div className="app-container">
       <header>
-        <motion.h1 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          القرآن الكريم
-        </motion.h1>
-        <p>استمع للقرآن الكريم وحمله بصوت قارئك المفضل</p>
+        <div className="header-brand">
+          <motion.h1 initial={{ opacity: 0 }} animate={{ opacity: 1 }}>القرآن الكريم</motion.h1>
+          <p>استماع، تحميل، وقراءة</p>
+        </div>
+
+        <div className="auth-bar">
+          {user ? (
+            <div className="user-info">
+              <img src={user.photoURL} alt={user.displayName} className="user-avatar" />
+              <button onClick={logout} className="logout-btn">خروج</button>
+            </div>
+          ) : (
+            <button onClick={login} className="login-btn">
+              <User size={20} />
+              تسجيل الدخول
+            </button>
+          )}
+        </div>
       </header>
+
+      <nav className="tabs">
+        <div className={`tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>جميع السور</div>
+        <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة {favorites.length > 0 && `(${favorites.length})`}</div>
+      </nav>
 
       <div className="controls-grid">
         <div className="card">
           <label className="label">اختر القارئ</label>
-          <select value={selectedReciter?.id} onChange={handleReciterChange}>
-            {reciters.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
+          <select value={selectedReciter?.id} onChange={(e) => setSelectedReciter(reciters.find(r => r.id === parseInt(e.target.value)))}>
+            {reciters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         </div>
 
@@ -179,102 +238,84 @@ function App() {
               placeholder="ابحث عن سورة..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.8rem 1rem 0.8rem 2.5rem',
-                background: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid var(--border)',
-                borderRadius: '0.8rem',
-                color: '#fff',
-                fontSize: '1rem',
-                outline: 'none'
-              }}
             />
-            <Search 
-              size={18} 
-              style={{ 
-                position: 'absolute', 
-                left: '1rem', 
-                top: '50%', 
-                transform: 'translateY(-50%)',
-                color: 'var(--text-muted)'
-              }} 
-            />
+            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           </div>
         </div>
       </div>
 
       <div className="surahs-grid">
         {filteredSurahs.map((surah) => (
-          <motion.div 
-            layout
-            key={surah.id} 
-            className="card surah-card"
-            whileHover={{ scale: 1.02 }}
-          >
+          <motion.div layout key={surah.id} className="card surah-card">
             <div className="surah-info">
               <div className="surah-number">{surah.id}</div>
               <div className="surah-name">{surah.name}</div>
             </div>
             <div className="surah-actions">
-              <button 
-                className="action-btn" 
-                onClick={() => playSurah(surah)}
-                title="تشغيل"
-              >
-                {currentSurah?.id === surah.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              <button className={`action-btn favorite ${favorites.includes(surah.id) ? 'active' : ''}`} onClick={() => toggleFavorite(surah.id)}>
+                <Heart size={18} fill={favorites.includes(surah.id) ? "currentColor" : "none"} />
               </button>
-              <button 
-                className="action-btn download" 
-                onClick={() => downloadSurah(surah)}
-                title="تحميل"
-              >
-                <Download size={20} />
+              <button className="action-btn read" onClick={() => openReadingMode(surah)}>
+                <BookOpen size={18} />
+              </button>
+              <button className="action-btn" onClick={() => playSurah(surah)}>
+                {currentSurah?.id === surah.id && isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              </button>
+              <button className="action-btn" onClick={() => downloadSurah(surah)}>
+                <Download size={18} />
               </button>
             </div>
           </motion.div>
         ))}
       </div>
 
+      {/* Reading Modal */}
+      <AnimatePresence>
+        {readingSurah && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="modal-content" initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+              <div className="modal-header">
+                <h2>سورة {readingSurah.name}</h2>
+                <button className="close-btn" onClick={() => setReadingSurah(null)}><X size={24} /></button>
+              </div>
+              <div className="reading-body">
+                {readingLoading ? (
+                  <Loader2 className="animate-spin" size={32} />
+                ) : (
+                  <>
+                    {readingSurah.id !== 1 && readingSurah.id !== 9 && <div className="basmala">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
+                    {surahText?.ayahs.map(ayah => (
+                      <span key={ayah.number}>
+                        {ayah.text} <span className="ayah-number">{ayah.numberInSurah}</span>
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Player Bar */}
       <AnimatePresence>
         {currentSurah && (
-          <motion.div 
-            className="player-bar"
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            exit={{ y: 100 }}
-          >
+          <motion.div className="player-bar" initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}>
             <div className="player-info">
               <span className="surah-name">{currentSurah.name}</span>
               <span className="label">{selectedReciter?.name}</span>
             </div>
-
             <div className="player-controls">
-              <button 
-                className="play-pause-btn"
-                onClick={() => isPlaying ? audioRef.current.pause() : audioRef.current.play()}
-              >
+              <button className="play-pause-btn" onClick={() => isPlaying ? audioRef.current.pause() : audioRef.current.play()}>
                 {isPlaying ? <Pause size={24} /> : <Play size={24} />}
               </button>
             </div>
-
             <div className="progress-container">
               <div className="progress-bar" onClick={handleProgressChange}>
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                <span>{Math.floor(audioRef.current.currentTime / 60)}:{Math.floor(audioRef.current.currentTime % 60).toString().padStart(2, '0')}</span>
-                <span>{Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, '0')}</span>
+                <div className="progress-fill" style={{ width: `${progress}%` }}></div>
               </div>
             </div>
-
-            <div className="player-actions" style={{ display: 'flex', gap: '1rem' }}>
-              <Volume2 size={20} />
-              {/* Add Volume control here if needed */}
-            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}><Volume2 size={20} /></div>
           </motion.div>
         )}
       </AnimatePresence>
