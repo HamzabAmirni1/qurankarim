@@ -55,12 +55,23 @@ function App() {
     }
   };
 
-  const playSurah = (surah, reciter = selectedReciter) => {
-    if (!reciter) return;
+  const getAudioUrl = (surah, reciter) => {
+    if (!reciter || !reciter.moshaf) return null;
+    
+    // Find a moshaf that contains this surah index
+    const moshaf = reciter.moshaf.find(m => {
+      const allowedSurahs = m.surah_list.split(',').map(Number);
+      return allowedSurahs.includes(surah.id);
+    }) || reciter.moshaf[0];
 
-    const server = reciter.moshaf[0].server;
+    const server = moshaf.server;
     const surahId = surah.id.toString().padStart(3, '0');
-    const audioUrl = `${server}${surahId}.mp3`;
+    return `${server}${surahId}.mp3`;
+  };
+
+  const playSurah = (surah, reciter = selectedReciter) => {
+    const audioUrl = getAudioUrl(surah, reciter);
+    if (!audioUrl) return;
 
     if (currentSurah?.id === surah.id && isPlaying) {
       audioRef.current.pause();
@@ -73,19 +84,27 @@ function App() {
     }
   };
 
-  const downloadSurah = (surah) => {
-    if (!selectedReciter) return;
-    const server = selectedReciter.moshaf[0].server;
-    const surahId = surah.id.toString().padStart(3, '0');
-    const audioUrl = `${server}${surahId}.mp3`;
-    
-    const link = document.createElement('a');
-    link.href = audioUrl;
-    link.download = `${surah.name}-${selectedReciter.name}.mp3`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadSurah = async (surah) => {
+    const audioUrl = getAudioUrl(surah, selectedReciter);
+    if (!audioUrl) return;
+
+    try {
+      // Create a button with a proper download attribute
+      // For some servers, we might need a direct proxy or blob fetch if they block direct download
+      const response = await fetch(audioUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${surah.name}-${selectedReciter.name}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      // Fallback if fetch fails (CORS issues)
+      window.open(audioUrl, '_blank');
+    }
   };
 
   useEffect(() => {
