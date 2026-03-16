@@ -42,8 +42,9 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(localStorage.getItem('activeTab') || 'all');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [notification, setNotification] = useState(null);
   
   const [user, setUser] = useState(null);
   const [favorites, setFavorites] = useState([]);
@@ -71,6 +72,15 @@ function App() {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
+  const notify = (msg, type = 'info') => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   useEffect(() => {
     fetchReciters();
@@ -116,22 +126,23 @@ function App() {
       setPrayerTimes(data.data.timings);
       setCity(customCity);
       localStorage.setItem('city', customCity);
-    } catch (e) { console.error(e); }
+      if (customCity !== "الموقع الحالي") notify(`تم تحديث المواقيت لمدينة ${customCity}`, 'success');
+    } catch (e) { notify('لم يتم العثور على المدينة', 'error'); }
   };
 
   const detectLocation = () => {
-    if (!navigator.geolocation) return alert('متصفحك لا يدعم تحديد الموقع');
+    if (!navigator.geolocation) return notify('متصفحك لا يدعم تحديد الموقع', 'error');
     
+    notify('جاري تحديد موقعك...', 'info');
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
       try {
-        // Using Aladhan's coord to timing API directly
         const { data } = await axios.get(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=3`);
         setPrayerTimes(data.data.timings);
-        // Simple heuristic to set city name if possible, or just stay as is
-        setCity("الموقع الحالي"); 
-      } catch (e) { console.error(e); }
-    }, () => alert('يرجى السماح بالوصول للموقع ليتم التحديد تلقائياً'));
+        setCity("الموقع الحالي");
+        notify('تم تحديد الموقع بنجاح', 'success');
+      } catch (e) { notify('فشل جلب الأوقات', 'error'); }
+    }, () => notify('يرجى السماح بالوصول للموقع', 'error'));
   };
 
   const fetchAdhkar = async () => {
@@ -151,8 +162,14 @@ function App() {
     } catch (e) { console.error(e); } finally { setTafsirLoading(false); }
   };
 
-  const login = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-  const logout = () => supabase.auth.signOut();
+  const login = () => {
+    notify('جاري توجيهك لتسجيل الدخول...', 'info');
+    supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+  };
+  const logout = () => { 
+    supabase.auth.signOut();
+    notify('تم تسجيل الخروج بنجاح', 'success');
+  };
 
   const toggleFavorite = async (surahId) => {
     if (!user) { login(); return; }
@@ -471,6 +488,19 @@ function App() {
           ))}
         </div>
       </footer>
+
+      <AnimatePresence>
+        {notification && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 50, x: '-50%' }}
+            className={`notification-toast ${notification.type}`}
+          >
+            {notification.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

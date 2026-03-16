@@ -850,3 +850,37 @@ footer {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  border-radius: 3rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  text-align: center;
+  min-width: 250px;
+}
+
+.notification-toast.success {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.notification-toast.error {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.notification-toast.info {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
