@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
-  Play, Pause, Download, Volume2, Search, Loader2, 
-  Heart, BookOpen, LogOut, User, X, Moon, Sun, 
+  Play, Pause, Download, Search, Loader2, 
+  Heart, BookOpen, User, X, Moon, Sun, 
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark,
-  Clock, Sunrise, Sunset, MoonStar, Star, Info
+  Sunrise, Sunset, MoonStar, Info, BookCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './supabase';
@@ -50,6 +50,11 @@ function App() {
   const [readingLoading, setReadingLoading] = useState(false);
   const [selectedTafsir, setSelectedTafsir] = useState(null);
   const [tafsirLoading, setTafsirLoading] = useState(false);
+
+  // New Tafsir Tab States
+  const [tafsirSurahId, setTafsirSurahId] = useState(1);
+  const [tafsirAyahId, setTafsirAyahId] = useState(1);
+  const [independentTafsir, setIndependentTafsir] = useState(null);
 
   const [prayerTimes, setPrayerTimes] = useState(null);
   const [city, setCity] = useState(localStorage.getItem('city') || 'Casablanca');
@@ -112,14 +117,16 @@ function App() {
     try {
       const { data } = await axios.get(ADHKAR_URL);
       setAdhkar(data);
+      if (!selectedAdhkarCategory) setSelectedAdhkarCategory(Object.keys(data)[0]);
     } catch (e) { console.error(e); }
   };
 
-  const fetchTafsir = async (surahId, ayahId) => {
-    setTafsirLoading(true);
+  const fetchTafsir = async (surahId, ayahId, isIndependent = false) => {
+    if (isIndependent) setTafsirLoading(true);
     try {
       const { data } = await axios.get(`${TAFSIR_API}/${surahId}/${ayahId}`);
-      setSelectedTafsir(data.result);
+      if (isIndependent) setIndependentTafsir(data.result);
+      else setSelectedTafsir(data.result);
     } catch (e) { console.error(e); } finally { setTafsirLoading(false); }
   };
 
@@ -214,7 +221,7 @@ function App() {
 
         <div className="header-search-container" style={{ flex: 1, margin: '0 2rem', maxWidth: '600px', position: 'relative' }}>
           <input type="text" placeholder="ابحث في القرآن..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-          <Search size={18} style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -253,6 +260,7 @@ function App() {
         <nav className="tabs">
           <div className={`tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>السور</div>
           <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة</div>
+          <div className={`tab ${activeTab === 'tafsir' ? 'active' : ''}`} onClick={() => setActiveTab('tafsir')}>تفسير السور</div>
           <div className={`tab ${activeTab === 'adhkar' ? 'active' : ''}`} onClick={() => setActiveTab('adhkar')}>الأذكار</div>
           <div className={`tab ${activeTab === 'prayers' ? 'active' : ''}`} onClick={() => setActiveTab('prayers')}>مواقيت الصلاة</div>
         </nav>
@@ -278,15 +286,43 @@ function App() {
                     </div>
                   </div>
                   <div className="surah-actions">
-                    <button className={`action-btn favorite ${favorites.includes(surah.id) ? 'active' : ''}`} onClick={() => toggleFavorite(surah.id)}><Heart size={18} fill={favorites.includes(surah.id) ? "#ef4444" : "none"} /></button>
-                    <button className="action-btn" onClick={() => openReadingMode(surah)}><BookOpen size={18} /></button>
-                    <button className="action-btn" onClick={() => playSurah(surah)}>{currentSurah?.id === surah.id && isPlaying ? <Pause size={18} /> : <Play size={18} />}</button>
-                    <button className="action-btn" onClick={() => downloadSurah(surah)}><Download size={18} /></button>
+                    <button className={`action-btn favorite ${favorites.includes(surah.id) ? 'active' : ''}`} onClick={() => toggleFavorite(surah.id)} title="تفضيل"><Heart size={18} fill={favorites.includes(surah.id) ? "#ef4444" : "none"} /></button>
+                    <button className="action-btn" onClick={() => openReadingMode(surah)} title="قراءة وتفسير"><BookOpen size={18} /></button>
+                    <button className="action-btn" onClick={() => playSurah(surah)} title="استماع"><Play size={18} /></button>
+                    <button className="action-btn" onClick={() => downloadSurah(surah)} title="تحميل"><Download size={18} /></button>
                   </div>
                 </motion.div>
               ))}
             </div>
           </>
+        ) : activeTab === 'tafsir' ? (
+          <div className="tafsir-full-tab">
+            <div className="card tafsir-controls">
+              <div className="grid-2">
+                <div>
+                  <label className="label">اختر السورة</label>
+                  <select value={tafsirSurahId} onChange={(e) => setTafsirSurahId(e.target.value)}>
+                    {surahs.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">رقم الآية</label>
+                  <input type="number" min="1" value={tafsirAyahId} onChange={(e) => setTafsirAyahId(e.target.value)} />
+                </div>
+              </div>
+              <button className="login-btn w-full mt-1" onClick={() => fetchTafsir(tafsirSurahId, tafsirAyahId, true)}>بحث في التفسير</button>
+            </div>
+            {tafsirLoading ? <div className="p-4 text-center"><Loader2 className="animate-spin inline" /> جاري جلب التفسير...</div> : independentTafsir && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card tafsir-results">
+                <h1>{independentTafsir.sura} - آية {independentTafsir.aya}</h1>
+                <p className="original-ayah-large">{independentTafsir.arabic_text}</p>
+                <div className="tafsir-main">
+                  <h3>تفسير الميسر</h3>
+                  <p>{independentTafsir.translation}</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
         ) : activeTab === 'adhkar' ? (
           <div className="adhkar-section">
             <div className="categories-scroll">
@@ -296,9 +332,14 @@ function App() {
             </div>
             <div className="adhkar-grid">
               {selectedAdhkarCategory && adhkar[selectedAdhkarCategory].map((zikr, idx) => (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={idx} className="card zikr-card">
-                  <p>{zikr.content}</p>
-                  <div className="zikr-footer"><span>التكرار: {zikr.count || (zikr.repeats && JSON.parse(zikr.repeats)) || 1}</span><span className="source">{zikr.description}</span></div>
+                <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }} key={idx} className="card zikr-card">
+                  <div className="zikr-content-box">
+                    <p>{zikr.content}</p>
+                  </div>
+                  <div className="zikr-footer">
+                    <div className="zikr-badge">التكرار: {zikr.count || 1}</div>
+                    <small className="zikr-src">{zikr.description || 'مصدر موثوق'}</small>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -339,9 +380,12 @@ function App() {
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className="modal-content reading-modal" initial={{ scale: 0.9 }}>
               <div className="modal-header">
-                <h2>{readingSurah.name}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <BookCheck size={28} className="text-emerald-500" />
+                  <h2>{readingSurah.name}</h2>
+                </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  {selectedTafsir && <button className="action-btn" onClick={() => setSelectedTafsir(null)}><Info size={20} /> النص الأصلي</button>}
+                  {selectedTafsir && <button className="action-btn text-emerald-500" onClick={() => setSelectedTafsir(null)}><Info size={20} /> عرض النص فقط</button>}
                   <button className="close-btn" onClick={() => setReadingSurah(null)}><X size={24} /></button>
                 </div>
               </div>
@@ -351,19 +395,19 @@ function App() {
                     <div className="quran-text-column">
                       {![1, 9].includes(readingSurah.id) && <div className="basmala">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
                       {surahText?.ayahs.map(ayah => (
-                        <span key={ayah.number} className={`ayah-content ${lastRead?.ayahNumber === ayah.numberInSurah ? 'bookmarked' : ''}`} onClick={() => saveBookmark(ayah)}>
+                        <span key={ayah.number} className={`ayah-content ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'bookmarked' : ''}`} onClick={() => saveBookmark(ayah)}>
                           {ayah.text} <span className="ayah-number">{ayah.numberInSurah}</span>
                         </span>
                       ))}
                     </div>
                     {selectedTafsir && (
-                      <motion.div initial={{ x: 300 }} animate={{ x: 0 }} className="tafsir-panel">
-                        <h3>تفسير الآية {selectedTafsir.aya}</h3>
+                      <motion.div initial={{ x: 200, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="tafsir-panel">
+                        <div className="tafsir-header">تفسير الميسر - آية {selectedTafsir.aya}</div>
                         {tafsirLoading ? <Loader2 className="animate-spin" /> : (
                           <div className="tafsir-content">
-                            <p className="original-ayah">{selectedTafsir.arabic_text}</p>
-                            <hr />
-                            <p className="tafsir-text">{selectedTafsir.translation}</p>
+                            <p className="original-ayah-small italic">{selectedTafsir.arabic_text}</p>
+                            <div className="divider" />
+                            <p className="tafsir-text-inner">{selectedTafsir.translation}</p>
                           </div>
                         )}
                       </motion.div>
