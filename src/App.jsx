@@ -55,6 +55,8 @@ function App() {
   const [readingLoading, setReadingLoading] = useState(false);
   const [selectedTafsir, setSelectedTafsir] = useState(null);
   const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [readingFontSize, setReadingFontSize] = useState(parseInt(localStorage.getItem('readingFontSize')) || 28);
+  const [readingTheme, setReadingTheme] = useState(localStorage.getItem('readingTheme') || 'sepia');
 
   // New Tafsir Tab States
   const [tafsirSurahId, setTafsirSurahId] = useState(1);
@@ -74,8 +76,12 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('activeTab', activeTab);
-  }, [activeTab]);
+    localStorage.setItem('readingFontSize', readingFontSize);
+  }, [readingFontSize]);
+
+  useEffect(() => {
+    localStorage.setItem('readingTheme', readingTheme);
+  }, [readingTheme]);
 
   const notify = (msg, type = 'info') => {
     setNotification({ msg, type });
@@ -137,11 +143,17 @@ function App() {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
       try {
-        const { data } = await axios.get(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=3`);
-        setPrayerTimes(data.data.timings);
-        setCity("الموقع الحالي");
-        notify('تم تحديد الموقع بنجاح', 'success');
-      } catch (e) { notify('فشل جلب الأوقات', 'error'); }
+        const [prayerRes, geoRes] = await Promise.all([
+          axios.get(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=3`),
+          axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ar`)
+        ]);
+        
+        setPrayerTimes(prayerRes.data.data.timings);
+        const detectedCity = geoRes.data.city || geoRes.data.locality || "الموقع الحالي";
+        setCity(detectedCity);
+        localStorage.setItem('city', detectedCity);
+        notify(`تم تحديد موقعك: ${detectedCity}`, 'success');
+      } catch (e) { notify('فشل جلب أوقات الصلاة لموقعك', 'error'); }
     }, () => notify('يرجى السماح بالوصول للموقع', 'error'));
   };
 
@@ -287,11 +299,21 @@ function App() {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         {lastRead && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card khatm-card" onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
-              <Bookmark color="#fff" fill="var(--accent)" />
-              <div style={{ fontSize: '1.1rem', color: '#fff' }}><strong>مواصلة الختمة:</strong> سورة {lastRead.surahName} - آية {lastRead.ayahNumber}</div>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="khatm-card-premium" 
+            onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}
+          >
+            <div className="khatm-content">
+              <div className="khatm-text">
+                <span className="khatm-label">واصل من حيث توقفت</span>
+                <h3>سورة {lastRead.surahName}</h3>
+                <p>آية رقم {lastRead.ayahNumber}</p>
+              </div>
+              <img src="/assets/bookmark.png" className="khatm-icon-img" alt="Bookmark" />
             </div>
+            <div className="khatm-action-hint">اضغط للمتابعة <BookOpen size={16} /></div>
           </motion.div>
         )}
 
@@ -424,48 +446,74 @@ function App() {
         )}
       </div>
 
-      {/* Reading & Tafsir Modal */}
+      {/* Professional Reading Room */}
       <AnimatePresence>
         {readingSurah && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="modal-content reading-modal" initial={{ scale: 0.9 }}>
-              <div className="modal-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <BookCheck size={28} className="text-emerald-500" />
+          <motion.div 
+            className={`reading-room-overlay theme-${readingTheme}`} 
+            initial={{ opacity: 0, scale: 0.98 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            exit={{ opacity: 0, scale: 0.98 }}
+          >
+            <div className="reading-room-header">
+              <div className="rr-controls-left">
+                <button className="icon-btn-rr" onClick={() => setReadingSurah(null)} title="خروج"><X size={24} /></button>
+                <div className="rr-title-box">
                   <h2>{readingSurah.name}</h2>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  {selectedTafsir && <button className="action-btn text-emerald-500" onClick={() => setSelectedTafsir(null)}><Info size={20} /> عرض النص فقط</button>}
-                  <button className="close-btn" onClick={() => setReadingSurah(null)}><X size={24} /></button>
+                  <span>{readingSurah.englishName || `Surah ${readingSurah.id}`}</span>
                 </div>
               </div>
-              <div className="reading-body">
-                {readingLoading ? <Loader2 className="animate-spin" /> : (
-                  <div className="reading-layout">
-                    <div className="quran-text-column">
-                      {![1, 9].includes(readingSurah.id) && <div className="basmala">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
-                      {surahText?.ayahs.map(ayah => (
-                        <span key={ayah.number} className={`ayah-content ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'bookmarked' : ''}`} onClick={() => saveBookmark(ayah)}>
-                          {ayah.text} <span className="ayah-number">{ayah.numberInSurah}</span>
-                        </span>
-                      ))}
-                    </div>
+
+              <div className="rr-controls-right">
+                <div className="font-control">
+                  <span className="label-sm">حجم الخط</span>
+                  <input type="range" min="20" max="60" value={readingFontSize} onChange={(e) => setReadingFontSize(parseInt(e.target.value))} />
+                </div>
+                
+                <div className="theme-pills">
+                  {['light', 'dark', 'sepia'].map(t => (
+                    <button key={t} className={`theme-pill ${readingTheme === t ? 'active' : ''} ${t}`} onClick={() => setReadingTheme(t)} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="reading-room-body">
+              {readingLoading ? (
+                <div className="loader-full"><Loader2 className="animate-spin" size={48} /><span>جاري تجهيز المصحف...</span></div>
+              ) : (
+                <div className="reading-room-layout">
+                  <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
+                    {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
+                    {surahText?.ayahs.map(ayah => (
+                      <span 
+                        key={ayah.number} 
+                        className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
+                        onClick={() => saveBookmark(ayah)}
+                      >
+                        {ayah.text} <span className="ayah-end-ornament">﴿{ayah.numberInSurah}﴾</span>
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <AnimatePresence>
                     {selectedTafsir && (
-                      <motion.div initial={{ x: 200, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="tafsir-panel">
-                        <div className="tafsir-header">تفسير الميسر - آية {selectedTafsir.aya}</div>
-                        {tafsirLoading ? <Loader2 className="animate-spin" /> : (
-                          <div className="tafsir-content">
-                            <p className="original-ayah-small italic">{selectedTafsir.arabic_text}</p>
-                            <div className="divider" />
-                            <p className="tafsir-text-inner">{selectedTafsir.translation}</p>
-                          </div>
-                        )}
+                      <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="tafsir-side-panel">
+                        <div className="ts-header">
+                          <h3>تفسير الميسر</h3>
+                          <button onClick={() => setSelectedTafsir(null)}><X size={20} /></button>
+                        </div>
+                        <div className="ts-content">
+                          <p className="ts-ayah-text">{selectedTafsir.arabic_text}</p>
+                          <div className="ts-divider" />
+                          <p className="ts-translation"><strong>التفسير:</strong> {selectedTafsir.translation}</p>
+                        </div>
                       </motion.div>
                     )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
