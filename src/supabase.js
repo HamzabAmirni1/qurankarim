@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://ydugkhqbrpdatedsyphk.supabase.co';
-const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'; // اطلب من المستخدم وضع المفتاح هنا
+const supabaseAnonKey = 'sb_publishable_6aVTKpbnQ37s1eXzMqVV0w_ABwUIFJb';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
