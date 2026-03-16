@@ -325,6 +325,7 @@ function App() {
           <div className={`tab ${activeTab === 'tafsir' ? 'active' : ''}`} onClick={() => setActiveTab('tafsir')}>تفسير السور</div>
           <div className={`tab ${activeTab === 'adhkar' ? 'active' : ''}`} onClick={() => setActiveTab('adhkar')}>الأذكار</div>
           <div className={`tab ${activeTab === 'prayers' ? 'active' : ''}`} onClick={() => setActiveTab('prayers')}>مواقيت الصلاة</div>
+          <div className={`tab ${activeTab === 'help' ? 'active' : ''}`} onClick={() => setActiveTab('help')}>كيفية الاستخدام</div>
         </nav>
 
         {activeTab === 'all' || activeTab === 'favorites' ? (
@@ -405,6 +406,36 @@ function App() {
                 </motion.div>
               ))}
             </div>
+          </div>
+        ) : activeTab === 'help' ? (
+          <div className="help-section">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card help-card">
+              <div className="help-header">
+                <Info size={32} className="text-emerald-500" />
+                <h2>دليل الاستخدام والختمة</h2>
+              </div>
+              <div className="help-content-grid">
+                <div className="help-item">
+                  <h3>📖 كيف أبدأ الختمة؟</h3>
+                  <p>عند دخولك لوضع "القراءة"، قم بالضغط على أي آية تصل إليها. سيقوم التطبيق تلقائياً بحفظ مكانك ووضع علامة تمييز عليها.</p>
+                </div>
+                <div className="help-item">
+                  <h3>🔖 التذكير التلقائي</h3>
+                  <p>في المرة القادمة التي تفتح فيها التطبيق، ستجد بطاقة علوية تخبرك بآخر سورة وآية توقفت عندها. اضغط عليها لتعود فوراً لمكانك.</p>
+                </div>
+                <div className="help-item">
+                  <h3>🎧 الاستماع والتحميل</h3>
+                  <p>يمكنك اختيار قارئك المفضل من القائمة والاستماع للسور مباشرة أو تحميلها لجهازك بصيغة MP3.</p>
+                </div>
+                <div className="help-item">
+                  <h3>🌙 الوضع الليلي</h3>
+                  <p>استخدم أيقونة الشمس/القمر في الأعلى للتبديل بين وضع النهار ووضع الليل المريح للعين.</p>
+                </div>
+              </div>
+              <div className="help-footer-note">
+                <Bookmark size={20} /> نصيحة: قم بتسجيل الدخول لحفظ ختمتك ومفضلاتك عبر جميع أجهزتك.
+              </div>
+            </motion.div>
           </div>
         ) : (
           <div className="prayer-times-section">
@@ -489,25 +520,26 @@ function App() {
                 <div className="loader-full"><Loader2 className="animate-spin" size={48} /><span>جاري تجهيز المصحف...</span></div>
               ) : (
                 <div className="reading-room-layout">
-                  <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
-                    {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
-                    {surahText?.ayahs.map((ayah, index) => {
-                      let text = ayah.text;
-                      // Accurate Basmala stripping for Uthmani text
-                      const basmalaPrefix = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
-                      if (index === 0 && ![1, 9].includes(readingSurah.id) && text.startsWith(basmalaPrefix)) {
-                        text = text.substring(basmalaPrefix.length).trim();
-                      }
-                      return (
-                        <span 
-                          key={ayah.number} 
-                          className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
-                          onClick={() => saveBookmark(ayah)}
-                        >
-                          {text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
-                        </span>
-                      );
-                    })}
+                  <div className="quran-text-container-premium">
+                    <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
+                      {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
+                      {surahText?.ayahs.map((ayah, index) => {
+                        let text = ayah.text;
+                        const basmalaPrefix = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+                        if (index === 0 && ![1, 9].includes(readingSurah.id) && text.startsWith(basmalaPrefix)) {
+                          text = text.substring(basmalaPrefix.length).trim();
+                        }
+                        return (
+                          <span 
+                            key={ayah.number} 
+                            className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
+                            onClick={() => saveBookmark(ayah)}
+                          >
+                            {text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                   
                   <AnimatePresence>
