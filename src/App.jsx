@@ -30,8 +30,8 @@ const SOCIAL_LINKS = [
 ];
 
 const MOROCCAN_CITIES = [
-  "Casablanca", "Rabat", "Fes", "Marrakesh", "Tangier", "Agadir", "Meknes", "Oujda", "Kenitra", "Tetouan", "Safi", "Mohammedia", "Temara", "El Jadida", "Nador", "Taza", "Settat", "Larache", "Ksar El Kebir", "Khemisset", "Guelmim", "Berrechid", "Ouarzazate", "Taroudant", "Dakhla", "Khouribga", "Beni Mellal", "Tiznit", "Errachidia"
-];
+  "Agadir", "Al Hoceima", "Arfoud", "Assilah", "Azemour", "Azilal", "Azrou", "Ben Slimane", "Bengrire", "Beni Mellal", "Berkane", "Berrechid", "Bouarfa", "Boujad", "Boujdour", "Boulemane", "Bouznika", "Casablanca", "Chefchaouen", "Dakhla", "El Jadida", "El Kelaa des Sraghna", "Errachidia", "Essaouira", "Fes", "Figuig", "Guelmim", "Guercif", "Ifrane", "Kenitra", "Khemisset", "Khenifra", "Khouribga", "Ksar El Kebir", "Laayoune", "Larache", "Marrakesh", "Meknes", "Midelt", "Missour", "Mohammedia", "Nador", "Ouarzazate", "Oued Zem", "Oujda", "Rabat", "Safi", "Sefrou", "Settat", "Sidi Ifni", "Sidi Kacem", "Sidi Slimane", "Skhirat", "Smara", "Tan-Tan", "Tangier", "Taourirt", "Taroudant", "Tata", "Taza", "Temara", "Tetouan", "Tifelt", "Tinghir", "Tiznit", "Youssoufia", "Zagora"
+].sort();
 
 function App() {
   const [reciters, setReciters] = useState([]);
