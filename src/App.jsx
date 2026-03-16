@@ -209,11 +209,22 @@ function App() {
   );
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ padding: 0, maxWidth: 'none' }}>
       <header>
         <div className="header-brand">
+          <div className="header-icon"><BookOpen size={32} fill="currentColor" /></div>
           <h1>القرآن الكريم</h1>
-          <p>بإشراف المطور حمزة اعمرني</p>
+        </div>
+
+        <div style={{ flex: 1, margin: '0 2rem', maxWidth: '600px', position: 'relative' }}>
+          <input 
+            type="text" 
+            placeholder="ابحث في القرآن..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ width: '100%', padding: '0.6rem 1rem 0.6rem 2.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-dark)', color: 'var(--text-main)' }}
+          />
+          <Search size={18} style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -228,53 +239,64 @@ function App() {
                 <button onClick={logout} className="logout-btn">خروج</button>
               </div>
             ) : (
-              <button onClick={login} className="login-btn"><User size={20} /> دخول</button>
+              <button onClick={login} className="login-btn" style={{ background: '#198754' }}>
+                <LogOut size={20} style={{ transform: 'rotate(180deg)' }} />
+                تسجيل الدخول
+              </button>
             )}
           </div>
         </div>
       </header>
 
-      {lastRead && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="card khatm-card" 
-          onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
-            <Bookmark color="#fff" fill="var(--accent)" />
-            <div style={{ fontSize: '1.1rem' }}>
-              <strong>مواصلة الختمة:</strong> سورة {lastRead.surahName} - آية {lastRead.ayahNumber}
+      <section className="hero-banner">
+        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>القرآن الكريم</motion.h2>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>اقرأ كتاب الله الكريم بطريقة سهلة ومريحة</motion.p>
+      </section>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
+        {lastRead && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="card khatm-card" 
+            onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
+              <Bookmark color="#fff" fill="var(--accent)" />
+              <div style={{ fontSize: '1.1rem', color: '#fff' }}>
+                <strong>مواصلة الختمة:</strong> سورة {lastRead.surahName} - آية {lastRead.ayahNumber}
+              </div>
             </div>
+          </motion.div>
+        )}
+
+        <nav className="tabs">
+          <div className={`tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>السور</div>
+          <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة ({favorites.length})</div>
+        </nav>
+
+        <div className="controls-grid" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="card">
+            <label className="label">اختر القارئ للاستماع</label>
+            <select value={selectedReciter?.id} onChange={(e) => setSelectedReciter(reciters.find(r => r.id === parseInt(e.target.value)))}>
+              {reciters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
           </div>
-        </motion.div>
-      )}
-
-      <nav className="tabs">
-        <div className={`tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>السور</div>
-        <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة ({favorites.length})</div>
-      </nav>
-
-      <div className="controls-grid">
-        <div className="card">
-          <label className="label">القارئ</label>
-          <select value={selectedReciter?.id} onChange={(e) => setSelectedReciter(reciters.find(r => r.id === parseInt(e.target.value)))}>
-            {reciters.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
         </div>
-        <div className="card">
-          <label className="label">بحث</label>
-          <input type="text" placeholder="اسم السورة..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-        </div>
-      </div>
 
-      <div className="surahs-grid">
-        {filteredSurahs.map((surah) => (
-          <motion.div layout key={surah.id} className="card surah-card">
-            <div className="surah-info">
-              <div className="surah-number">{surah.id}</div>
-              <div className="surah-name">{surah.name}</div>
-            </div>
+        <div className="surahs-grid">
+          {filteredSurahs.map((surah) => (
+            <motion.div layout key={surah.id} className="card surah-card">
+              <div className="surah-info">
+                <div className="surah-number">{surah.id}</div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="surah-name">{surah.name}</div>
+                  <div className="surah-english">{surah.englishName || `Surah ${surah.id}`}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '4px', background: 'rgba(22, 163, 74, 0.05)', padding: '2px 8px', borderRadius: '10px', width: 'fit-content' }}>
+                    {surah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}
+                  </div>
+                </div>
+              </div>
             <div className="surah-actions">
               <button className={`action-btn favorite ${favorites.includes(surah.id) ? 'active' : ''}`} onClick={() => toggleFavorite(surah.id)}>
                 <Heart size={18} fill={favorites.includes(surah.id) ? "#ef4444" : "none"} />
@@ -287,6 +309,7 @@ function App() {
             </div>
           </motion.div>
         ))}
+        </div>
       </div>
 
       <AnimatePresence>
