@@ -116,9 +116,17 @@ function App() {
   const filteredSurahs = surahs.filter(s => s.name.includes(searchQuery));
 
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', color: '#fff' }}>
       <Loader2 className="animate-spin" size={48} color="var(--primary)" />
-      <p>جاري التحميل...</p>
+      <p style={{ fontFamily: 'Cairo' }}>جاري تحميل البيانات...</p>
+    </div>
+  );
+
+  if (reciters.length === 0 && !loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', color: '#fff' }}>
+      <h2>عذراً، تعذر تحميل البيانات</h2>
+      <p>يرجى التحقق من اتصال الإنترنت أو المحاولة لاحقاً</p>
+      <button onClick={() => window.location.reload()} className="action-btn" style={{ padding: '0.5rem 1rem' }}>إعادة المحاولة</button>
     </div>
   );
 
