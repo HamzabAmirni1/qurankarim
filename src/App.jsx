@@ -311,7 +311,9 @@ function App() {
                 <h3>سورة {lastRead.surahName}</h3>
                 <p>آية رقم {lastRead.ayahNumber}</p>
               </div>
-              <img src="/assets/bookmark.png" className="khatm-icon-img" alt="Bookmark" />
+              <div className="khatm-icon-glow">
+                <Bookmark size={60} fill="rgba(255,255,255,0.2)" />
+              </div>
             </div>
             <div className="khatm-action-hint">اضغط للمتابعة <BookOpen size={16} /></div>
           </motion.div>
