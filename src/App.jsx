@@ -19,13 +19,16 @@ const API_BASE = 'https://mp3quran.net/api/v3';
 const QURAN_TEXT_API = 'https://api.alquran.cloud/v1';
 
 const SOCIAL_LINKS = [
-  { name: 'WhatsApp Channel', icon: <MessageCircle size={18} />, url: 'https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p' },
-  { name: 'Instagram 1', icon: <Instagram size={18} />, url: 'https://instagram.com/hamza_amirni_01' },
-  { name: 'Instagram 2', icon: <Instagram size={18} />, url: 'https://instagram.com/hamza_amirni_02' },
-  { name: 'Facebook', icon: <Facebook size={18} />, url: 'https://www.facebook.com/6kqzuj3y4e' },
-  { name: 'YouTube', icon: <Youtube size={18} />, url: 'https://www.youtube.com/@Hamzaamirni01' },
-  { name: 'Telegram', icon: <Send size={18} />, url: 'https://t.me/hamzaamirni' },
-  { name: 'Portfolio', icon: <Globe size={18} />, url: 'https://hamzaamirni.netlify.app' }
+  { name: 'قناة الواتساب', icon: <MessageCircle size={18} />, url: 'https://whatsapp.com/channel/0029ValXRoHCnA7yKopcrn1p' },
+  { name: 'مجموعة الواتساب', icon: <MessageCircle size={18} />, url: 'https://chat.whatsapp.com/DDb3fGPuZPB1flLc1BV9gJ' },
+  { name: 'إنستغرام 1', icon: <Instagram size={18} />, url: 'https://instagram.com/hamza_amirni_01' },
+  { name: 'إنستغرام 2', icon: <Instagram size={18} />, url: 'https://instagram.com/hamza_amirni_02' },
+  { name: 'قناة الإنستغرام', icon: <Instagram size={18} />, url: 'https://www.instagram.com/channel/AbbqrMVbExH_EZLD/' },
+  { name: 'فيسبوك', icon: <Facebook size={18} />, url: 'https://www.facebook.com/6kqzuj3y4e' },
+  { name: 'صفحة الفيسبوك', icon: <Facebook size={18} />, url: 'https://www.facebook.com/profile.php?id=61564527797752' },
+  { name: 'يوتيوب', icon: <Youtube size={18} />, url: 'https://www.youtube.com/@Hamzaamirni01' },
+  { name: 'تلغرام', icon: <Send size={18} />, url: 'https://t.me/hamzaamirni' },
+  { name: 'موقعي الشخصي', icon: <Globe size={18} />, url: 'https://hamzaamirni.netlify.app' }
 ];
 
 function App() {
@@ -213,16 +216,15 @@ function App() {
 
       {lastRead && (
         <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card" 
-          style={{ marginBottom: '2rem', background: 'rgba(45, 212, 191, 0.1)', cursor: 'pointer' }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="card khatm-card" 
           onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Bookmark color="var(--accent)" />
-            <div>
-              <strong>واصل القراءة:</strong> سورة {lastRead.surahName} - آية {lastRead.ayahNumber}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center' }}>
+            <Bookmark color="#fff" fill="var(--accent)" />
+            <div style={{ fontSize: '1.1rem' }}>
+              <strong>مواصلة الختمة:</strong> سورة {lastRead.surahName} - آية {lastRead.ayahNumber}
             </div>
           </div>
         </motion.div>
