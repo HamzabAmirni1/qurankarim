@@ -1,25 +1,25 @@
-:root {
-  --primary: #16a34a; /* Islamic Green from screenshot */
-  --primary-hover: #15803d;
-  --primary-glow: rgba(22, 163, 74, 0.2);
-  --bg-dark: #0f172a;
+[data-theme='dark'] {
+  --bg-dark: #000000;
   --bg-black: #000000;
-  --bg-card: rgba(30, 41, 59, 0.7);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent: #10b981;
-  --border: rgba(255, 255, 255, 0.1);
-  --header-bg: #ffffff;
+  --bg-card: #0a0a0a;
+  --text-main: #ffffff;
+  --text-muted: #9ca3af;
+  --border: #1f2937;
+  --header-bg: #000000;
+  --input-bg: #111827;
+  --hero-bg: #16a34a;
 }
 
 [data-theme='light'] {
-  --bg-dark: #f1f5f9;
+  --bg-dark: #f9fafb;
   --bg-black: #ffffff;
   --bg-card: #ffffff;
-  --text-main: #1f2937;
+  --text-main: #111827;
   --text-muted: #6b7280;
   --border: #e5e7eb;
   --header-bg: #ffffff;
+  --input-bg: #f3f4f6;
+  --hero-bg: #16a34a;
 }
 
 * {
@@ -29,16 +29,18 @@
   font-family: 'Cairo', sans-serif;
 }
 
+:root {
+  --primary: #16a34a;
+  --primary-hover: #15803d;
+  --primary-glow: rgba(22, 163, 74, 0.2);
+}
+
 body {
   background-color: var(--bg-black);
   color: var(--text-main);
   min-height: 100vh;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(26, 115, 232, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(45, 212, 191, 0.1) 0%, transparent 40%);
-  background-attachment: fixed;
   direction: rtl;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .app-container {
@@ -87,7 +89,7 @@ header {
 
 /* Hero Section */
 .hero-banner {
-  background-color: var(--primary);
+  background-color: var(--hero-bg);
   color: #fff;
   padding: 4rem 2rem;
   text-align: center;
@@ -222,12 +224,17 @@ header {
 select, input {
   width: 100%;
   padding: 0.8rem 1rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 0.8rem;
-  color: #fff;
+  color: var(--text-main);
   font-size: 1rem;
   outline: none;
+  transition: all 0.2s;
+}
+
+select:focus, input:focus {
+  border-color: var(--primary);
 }
 
 .surahs-grid {
@@ -309,7 +316,7 @@ select, input {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--header-bg);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   padding: 1rem 2rem;
