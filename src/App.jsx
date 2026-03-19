@@ -664,33 +664,29 @@ function App() {
             </div>
 
             <div className="reading-room-body">
-              {currentSurah?.id === readingSurah.id && (
-                <div className="rr-floating-audio-player">
-                  <div className="rr-audio-main-controls">
-                    <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime -= 10 }} title="رجوع 10 ثواني"><SkipBack size={20} /></button>
-                    <button 
-                      className={`rr-play-btn ${isPlaying ? 'playing' : ''}`}
-                      onClick={() => playSurah(readingSurah)}
-                      title="تشغيل/إيقاف"
-                    >
-                      {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
-                    </button>
-                    <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime += 10 }} title="تقديم 10 ثواني"><SkipForward size={20} /></button>
-                  </div>
-                  
-                  <div className="rr-audio-info-row">
-                    <div className="rr-audio-progress-bar-full">
-                      <div className="rr-progress-fill" style={{ width: `${progress}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
               {readingLoading ? (
                 <div className="loader-full"><Loader2 className="animate-spin" size={48} /><span>جاري تجهيز المصحف...</span></div>
               ) : (
                 <div className="reading-room-layout">
                   <div className="quran-text-container-premium">
                     <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
+                      {currentSurah?.id === readingSurah.id && (
+                        <div className="rr-integrated-audio-player">
+                          <div className="rr-audio-main-controls">
+                            <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime -= 10 }} title="رجوع 10 ثواني"><SkipBack size={20} /></button>
+                            <button 
+                              className={`rr-play-btn ${isPlaying ? 'playing' : ''}`}
+                              onClick={() => playSurah(readingSurah)}
+                            >
+                              {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
+                            </button>
+                            <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime += 10 }} title="تقديم 10 ثواني"><SkipForward size={20} /></button>
+                          </div>
+                          <div className="rr-audio-progress-bar-full">
+                            <div className="rr-progress-fill" style={{ width: `${progress}%` }}></div>
+                          </div>
+                        </div>
+                      )}
                       {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
                       {surahText?.ayahs.map((ayah, index) => {
                         return (
