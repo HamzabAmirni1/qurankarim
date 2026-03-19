@@ -232,8 +232,10 @@ function App() {
     setReadingLoading(true);
     setSelectedTafsir(null);
     try {
-      const { data } = await axios.get(`${QURAN_TEXT_API}/surah/${surah.id}/quran-uthmani`);
-      setSurahText(data.data);
+      const { data } = await axios.get(`https://raw.githubusercontent.com/risan/quran-json/main/dist/chapters/${surah.id}.json`);
+      setSurahText({
+        ayahs: data.verses.map(v => ({ number: v.id, numberInSurah: v.id, text: v.text }))
+      });
     } catch (e) { console.error(e); notify('خطأ في تحميل النص', 'error'); } finally { setReadingLoading(false); }
   };
 
