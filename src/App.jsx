@@ -263,7 +263,7 @@ function App() {
     setReadingLoading(true);
     setSelectedTafsir(null);
     try {
-      const { data } = await axios.get(`https://api.alquran.cloud/v1/surah/${surah.id}/quran-uthmani`);
+      const { data } = await axios.get(`https://api.alquran.cloud/v1/surah/${surah.id}/quran-simple-enhanced`);
       setSurahText({
         ayahs: data.data.ayahs.map(v => ({ number: v.number, numberInSurah: v.numberInSurah, text: v.text }))
       });

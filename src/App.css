@@ -1100,13 +1100,15 @@ footer {
 
 .quran-text-flow {
   flex: 1;
-  line-height: 3.2;
+  line-height: 3.5;
   text-align: justify;
   text-justify: inter-word;
   direction: rtl;
   font-family: 'Amiri Quran', serif;
-  font-size: 1.4em;
+  font-size: 1.55em;
   padding: 0 1rem;
+  font-weight: 700;
+  color: #064e3b;
 }
 
 .basmala-premium {
