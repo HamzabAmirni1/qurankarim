@@ -95,30 +95,47 @@ header {
 }
 
 .resume-header-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, #047857, #065f46);
   color: #fff;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 0.8rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.6rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px var(--primary-glow);
+  box-shadow: 0 4px 14px rgba(4,120,87,0.35);
+  white-space: nowrap;
 }
 
 .resume-header-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px var(--primary-glow);
-  background: var(--primary-hover);
+  box-shadow: 0 6px 20px rgba(4,120,87,0.5);
+  background: linear-gradient(135deg, #065f46, #047857);
 }
 
-@media (max-width: 600px) {
-  .resume-header-btn span { display: none; }
-  .resume-header-btn { padding: 0.6rem; border-radius: 50%; }
+@media (max-width: 768px) {
+  .resume-header-btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    gap: 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .resume-header-btn {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+    border-radius: 0.5rem;
+  }
+  .resume-header-btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .header-icon {
