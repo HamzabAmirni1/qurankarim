@@ -11,6 +11,9 @@ import { supabase } from './supabase';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
+const PRAYER_API = 'https://api.aladhan.com/v1/timingsByCity';
+const TAFSIR_API = 'https://quranenc.com/api/v1/translation/aya/arabic_moyassar';
+const ADHKAR_URL = 'https://raw.githubusercontent.com/nawafalqari/azkar-api/56df51279ab6eb86dc2f6202c7de26c8948331c1/azkar.json';
 const HISN_AL_MUSLIM = {
   "أذكار الصباح": [
     { content: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لا إِلَهَ إِلا اللَّهُ وَحْدَهُ لا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", count: 1, ref: "مسلم" },

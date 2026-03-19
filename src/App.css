@@ -99,7 +99,7 @@ header {
   color: #fff;
   border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 2rem;
+  border-radius: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -165,7 +165,7 @@ header {
   gap: 1rem;
   padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 2rem;
+  border-radius: 0.8rem;
   border: 1px solid var(--border);
 }
 
@@ -272,7 +272,7 @@ header {
   color: #fff;
   border: none;
   padding: 0.6rem 1.5rem;
-  border-radius: 2rem;
+  border-radius: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -717,7 +717,7 @@ footer {
   padding: 0.6rem 1.5rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 2rem;
+  border-radius: 0.8rem;
   color: var(--text-main);
   cursor: pointer;
   transition: all 0.2s;
@@ -1327,7 +1327,7 @@ footer {
   left: 50%;
   transform: translateX(-50%);
   padding: 1rem 2rem;
-  border-radius: 3rem;
+  border-radius: 0.8rem;
   background: var(--bg-card);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
