@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Play, Pause, Download, Search, Loader2, 
-  Heart, BookOpen, User, X, Moon, Sun, 
+import {
+  Play, Pause, Download, Search, Loader2,
+  Heart, BookOpen, User, X, Moon, Sun,
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark,
   Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin
 } from 'lucide-react';
@@ -74,7 +74,7 @@ function App() {
   const [activeTab, setActiveTab] = useState(localStorage.getItem('activeTab') || 'all');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [notification, setNotification] = useState(null);
-  
+
   const [user, setUser] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [lastRead, setLastRead] = useState(JSON.parse(localStorage.getItem('lastRead')) || null);
@@ -96,6 +96,8 @@ function App() {
   const [city, setCity] = useState(localStorage.getItem('city') || 'Casablanca');
   const [adhkar, setAdhkar] = useState({});
   const [selectedAdhkarCategory, setSelectedAdhkarCategory] = useState(null);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   const audioRef = useRef(new Audio());
 
@@ -122,13 +124,26 @@ function App() {
     fetchSurahs();
     fetchPrayerTimes();
     fetchAdhkar();
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
       if (session?.user) fetchUserData(session.user.id);
       else { setFavorites([]); setLastRead(null); }
     });
-    return () => subscription.unsubscribe();
+
+    // PWA Install Prompt
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+      if (!localStorage.getItem('pwaInstallDismissed')) setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', () => setShowInstallBanner(false));
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    };
   }, []);
 
   const fetchUserData = async (userId) => {
@@ -167,7 +182,7 @@ function App() {
 
   const detectLocation = () => {
     if (!navigator.geolocation) return notify('متصفحك لا يدعم تحديد الموقع', 'error');
-    
+
     notify('جاري تحديد موقعك...', 'info');
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
@@ -176,7 +191,7 @@ function App() {
           axios.get(`https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=3`),
           axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ar`)
         ]);
-        
+
         setPrayerTimes(prayerRes.data.data.timings);
         const detectedCity = geoRes.data.city || geoRes.data.locality || "الموقع الحالي";
         setCity(detectedCity);
@@ -207,12 +222,25 @@ function App() {
     notify('جاري توجيهك لتسجيل الدخول...', 'info');
     supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
   };
-  const logout = () => { 
+  const logout = () => {
     supabase.auth.signOut();
     notify('تم تسجيل الخروج بنجاح', 'success');
   };
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') notify('تم تثبيت التطبيق بنجاح! 🎉', 'success');
+    setInstallPrompt(null);
+    setShowInstallBanner(false);
+  };
 
-  const toggleFavorite = async (surahId) => {
+  const handleDismissInstall = () => {
+    localStorage.setItem('pwaInstallDismissed', 'true');
+    setShowInstallBanner(false);
+  };
+
+ const toggleFavorite = async (surahId) => {
     if (!user) { login(); return; }
     const newFavs = favorites.includes(surahId) ? favorites.filter(id => id !== surahId) : [...favorites, surahId];
     setFavorites(newFavs);
@@ -307,7 +335,7 @@ function App() {
           <input type="text" placeholder="ابحث في القرآن..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         </div>
-          
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {lastRead && (
             <button className="resume-header-btn" onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}>
@@ -317,7 +345,7 @@ function App() {
           <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
           </button>
-          
+
           <div className="auth-bar">
             {user ? (
               <div className="user-info">
@@ -331,6 +359,30 @@ function App() {
         </div>
       </header>
 
+      {/* PWA Install Banner */}
+      <AnimatePresence>
+        {showInstallBanner && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            className="pwa-install-banner"
+          >
+            <div className="pwa-install-content">
+              <div className="pwa-install-icon">📲</div>
+              <div className="pwa-install-text">
+                <strong>ثبّت التطبيق</strong>
+                <span>استمتع بالقرآن الكريم كتطبيق على هاتفك أو حاسوبك</span>
+              </div>
+            </div>
+            <div className="pwa-install-actions">
+              <button className="pwa-install-btn" onClick={handleInstall}>تثبيت</button>
+              <button className="pwa-dismiss-btn" onClick={handleDismissInstall}>×</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <section className="hero-banner">
         <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>القرآن الكريم</motion.h2>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>{"وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا"}</motion.p>
@@ -338,10 +390,10 @@ function App() {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem' }}>
         {lastRead && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            className="khatm-card-premium" 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="khatm-card-premium"
             onClick={() => openReadingMode(surahs.find(s => s.id === lastRead.surahId))}
           >
             <div className="khatm-content">
@@ -529,12 +581,12 @@ function App() {
             <div className="card city-selector">
               <label className="label">اختيار المدينة</label>
               <div className="city-input-group">
-                <input 
+                <input
                   list="moroccan-cities"
-                  type="text" 
-                  value={city} 
-                  onChange={(e) => setCity(e.target.value)} 
-                  placeholder="ابحث عن مدينة (مثلاً: Casablanca)" 
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="ابحث عن مدينة (مثلاً: Casablanca)"
                 />
                 <datalist id="moroccan-cities">
                   {MOROCCAN_CITIES.map(c => <option key={c} value={c} />)}
@@ -569,10 +621,10 @@ function App() {
       {/* Professional Reading Room */}
       <AnimatePresence>
         {readingSurah && (
-          <motion.div 
-            className={`reading-room-overlay theme-${readingTheme}`} 
-            initial={{ opacity: 0, scale: 0.98 }} 
-            animate={{ opacity: 1, scale: 1 }} 
+          <motion.div
+            className={`reading-room-overlay theme-${readingTheme}`}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
           >
             <div className="reading-room-header">
@@ -593,7 +645,7 @@ function App() {
                   <span className="label-sm">حجم الخط</span>
                   <input type="range" min="20" max="60" value={readingFontSize} onChange={(e) => setReadingFontSize(parseInt(e.target.value))} />
                 </div>
-                
+
                 <div className="theme-pills">
                   {['light', 'dark', 'sepia'].map(t => (
                     <button key={t} className={`theme-pill ${readingTheme === t ? 'active' : ''} ${t}`} onClick={() => setReadingTheme(t)} />
@@ -612,9 +664,9 @@ function App() {
                       {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
                       {surahText?.ayahs.map((ayah, index) => {
                         return (
-                          <span 
-                            key={ayah.number} 
-                            className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
+                          <span
+                            key={ayah.number}
+                            className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`}
                             onClick={() => saveBookmark(ayah)}
                           >
                             {ayah.text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
@@ -623,7 +675,7 @@ function App() {
                       })}
                     </div>
                   </div>
-                  
+
                   <AnimatePresence>
                     {selectedTafsir && (
                       <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="tafsir-side-panel">
@@ -649,7 +701,7 @@ function App() {
       <AnimatePresence>
         {currentSurah && (
           <motion.div className="player-bar" initial={{ y: 100 }} animate={{ y: 0 }}>
-            <div className="player-info"><strong>{currentSurah.name}</strong><br/><small>{selectedReciter?.name}</small></div>
+            <div className="player-info"><strong>{currentSurah.name}</strong><br /><small>{selectedReciter?.name}</small></div>
             <button className="play-pause-btn" onClick={() => isPlaying ? audioRef.current.pause() : audioRef.current.play()}>{isPlaying ? <Pause size={24} /> : <Play size={24} />}</button>
             <div className="progress-container"><div className="progress-bar" onClick={(e) => { const rect = e.target.getBoundingClientRect(); audioRef.current.currentTime = ((e.clientX - rect.left) / rect.width) * audioRef.current.duration; }}><div className="progress-fill" style={{ width: `${progress}%` }}></div></div></div>
           </motion.div>
@@ -667,7 +719,7 @@ function App() {
 
       <AnimatePresence>
         {notification && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 50, x: '-50%' }}
