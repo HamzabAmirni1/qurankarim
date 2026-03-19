@@ -650,6 +650,24 @@ function App() {
                 </div>
               </div>
               <div className="rr-controls-right">
+                <div className="rr-header-audio-player">
+                  <div className="rr-audio-main-controls">
+                    <button className="rr-skip-btn" onClick={(e) => { e.stopPropagation(); audioRef.current.currentTime -= 10 }} title="رجوع 10 ثواني"><SkipBack size={18} /></button>
+                    <button 
+                      className={`rr-play-btn ${currentSurah?.id === readingSurah.id && isPlaying ? 'playing' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); playSurah(readingSurah); }}
+                    >
+                      {currentSurah?.id === readingSurah.id && isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
+                    </button>
+                    <button className="rr-skip-btn" onClick={(e) => { e.stopPropagation(); audioRef.current.currentTime += 10 }} title="تقديم 10 ثواني"><SkipForward size={18} /></button>
+                  </div>
+                  {currentSurah?.id === readingSurah.id && (
+                    <div className="rr-audio-progress-bar-mini">
+                      <div className="rr-progress-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="font-control">
                   <span className="label-sm">حجم الخط</span>
                   <input type="range" min="20" max="60" value={readingFontSize} onChange={(e) => setReadingFontSize(parseInt(e.target.value))} />
@@ -667,25 +685,7 @@ function App() {
               {readingLoading ? (
                 <div className="loader-full"><Loader2 className="animate-spin" size={48} /><span>جاري تجهيز المصحف...</span></div>
               ) : (
-                <>
-                  {currentSurah?.id === readingSurah.id && (
-                    <div className="rr-sticky-top-player">
-                      <div className="rr-audio-main-controls">
-                        <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime -= 10 }} title="رجوع 10 ثواني"><SkipBack size={20} /></button>
-                        <button 
-                          className={`rr-play-btn ${isPlaying ? 'playing' : ''}`}
-                          onClick={() => playSurah(readingSurah)}
-                        >
-                          {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
-                        </button>
-                        <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime += 10 }} title="تقديم 10 ثواني"><SkipForward size={20} /></button>
-                      </div>
-                      <div className="rr-audio-progress-bar-full">
-                        <div className="rr-progress-fill" style={{ width: `${progress}%` }}></div>
-                      </div>
-                    </div>
-                  )}
-                  <div className="reading-room-layout">
+                <div className="reading-room-layout">
                   <div className="quran-text-container-premium">
                     <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
                       {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
@@ -719,7 +719,6 @@ function App() {
                     )}
                   </AnimatePresence>
                 </div>
-                </>
               )}
             </div>
           </motion.div>
