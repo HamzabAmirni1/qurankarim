@@ -608,18 +608,13 @@ function App() {
                     <div className="quran-text-flow" style={{ fontSize: `${readingFontSize}px` }}>
                       {![1, 9].includes(readingSurah.id) && <div className="basmala-premium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>}
                       {surahText?.ayahs.map((ayah, index) => {
-                        let text = ayah.text;
-                        const basmalaPrefix = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
-                        if (index === 0 && ![1, 9].includes(readingSurah.id) && text.startsWith(basmalaPrefix)) {
-                          text = text.substring(basmalaPrefix.length).trim();
-                        }
                         return (
                           <span 
                             key={ayah.number} 
                             className={`ayah-unit ${lastRead?.ayahNumber === ayah.numberInSurah && lastRead?.surahId === readingSurah.id ? 'active-verse' : ''}`} 
                             onClick={() => saveBookmark(ayah)}
                           >
-                            {text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
+                            {ayah.text} <span className="ayah-number-badge">{ayah.numberInSurah}</span>
                           </span>
                         );
                       })}
