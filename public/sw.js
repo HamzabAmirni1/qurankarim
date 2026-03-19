@@ -1,4 +1,8 @@
 const CACHE_NAME = 'quran-cache-v1';
+
+// We only cache the root and essential static assets.
+// On desktop, the "white page" is often due to the Service Worker intercepting 
+// requests for compiled assets (which have hashes in their names) but not finding them.
 const urlsToCache = [
   '/',
   '/index.html',
@@ -6,21 +10,17 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
   self.skipWaiting();
 });
 
+self.addEventListener('activate', event => {
+  event.waitUntil(clients.claim());
+});
+
 self.addEventListener('fetch', event => {
+  // Strategy: Network first, then cache for PWA stability.
+  // This prevents the "White Page" issue when assets change on deploy.
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
