@@ -4,7 +4,7 @@ import {
   Play, Pause, Download, Search, Loader2,
   Heart, BookOpen, User, X, Moon, Sun,
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark,
-  Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin
+  Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin, SkipForward, SkipBack
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './supabase';
@@ -140,9 +140,19 @@ function App() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', () => setShowInstallBanner(false));
 
+    // Audio Progress Sync
+    const updateProgress = () => {
+      if (audioRef.current.duration) {
+        setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+      }
+    };
+    audioRef.current.addEventListener('timeupdate', updateProgress);
+    audioRef.current.addEventListener('ended', () => setIsPlaying(false));
+
     return () => {
       subscription.unsubscribe();
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      audioRef.current.removeEventListener('timeupdate', updateProgress);
     };
   }, []);
 
@@ -631,14 +641,18 @@ function App() {
               <div className="rr-controls-left">
                 <button className="icon-btn-rr" onClick={() => setReadingSurah(null)} title="خروج"><X size={24} /></button>
                 <div className="rr-title-box">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <button 
-                      className={`rr-play-btn ${currentSurah?.id === readingSurah.id && isPlaying ? 'playing' : ''}`}
-                      onClick={() => playSurah(readingSurah)}
-                      title="استماع للسورة"
-                    >
-                      {currentSurah?.id === readingSurah.id && isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
-                    </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div className="rr-audio-main-controls">
+                      <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime -= 10 }} title="رجوع 10 ثواني"><SkipBack size={18} /></button>
+                      <button 
+                        className={`rr-play-btn ${currentSurah?.id === readingSurah.id && isPlaying ? 'playing' : ''}`}
+                        onClick={() => playSurah(readingSurah)}
+                        title="استماع للسورة"
+                      >
+                        {currentSurah?.id === readingSurah.id && isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
+                      </button>
+                      <button className="rr-skip-btn" onClick={() => { audioRef.current.currentTime += 10 }} title="تقديم 10 ثواني"><SkipForward size={18} /></button>
+                    </div>
                     <h2>{readingSurah.name}</h2>
                   </div>
                   <div className="rr-meta-info">
