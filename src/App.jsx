@@ -631,7 +631,16 @@ function App() {
               <div className="rr-controls-left">
                 <button className="icon-btn-rr" onClick={() => setReadingSurah(null)} title="خروج"><X size={24} /></button>
                 <div className="rr-title-box">
-                  <h2>{readingSurah.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <button 
+                      className={`rr-play-btn ${currentSurah?.id === readingSurah.id && isPlaying ? 'playing' : ''}`}
+                      onClick={() => playSurah(readingSurah)}
+                      title="استماع للسورة"
+                    >
+                      {currentSurah?.id === readingSurah.id && isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
+                    </button>
+                    <h2>{readingSurah.name}</h2>
+                  </div>
                   <div className="rr-meta-info">
                     <span className="rr-badge">{readingSurah.revelationType === 'Meccan' ? 'مكية' : 'مدنية'}</span>
                     <span className="rr-badge">{readingSurah.numberOfAyahs} آية</span>
@@ -641,6 +650,11 @@ function App() {
               </div>
 
               <div className="rr-controls-right">
+                {currentSurah?.id === readingSurah.id && (
+                   <div className="rr-audio-progress-bar">
+                      <div className="rr-progress-fill" style={{ width: `${progress}%` }}></div>
+                   </div>
+                )}
                 <div className="font-control">
                   <span className="label-sm">حجم الخط</span>
                   <input type="range" min="20" max="60" value={readingFontSize} onChange={(e) => setReadingFontSize(parseInt(e.target.value))} />
