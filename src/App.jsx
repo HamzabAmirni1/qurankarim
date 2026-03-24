@@ -113,7 +113,7 @@ function App() {
   const [challengeCompleted, setChallengeCompleted] = useState(false);
 
   // Top Bar Info
-  const [maghribCountdown, setMaghribCountdown] = useState('');
+  const [nextPrayerInfo, setNextPrayerInfo] = useState({ name: 'المغرب', countdown: '' });
   const [currentTimeStr, setCurrentTimeStr] = useState('');
 
   const audioRef = useRef(new Audio());
@@ -297,24 +297,51 @@ function App() {
       const now = new Date();
       setCurrentTimeStr(now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       
-      if (prayerTimes && prayerTimes.Maghrib) {
+      if (prayerTimes) {
         const convertArabicNumeralsToEnglish = (str) => {
           const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
           return str.replace(/[٠-٩]/g, (d) => String(arabic.indexOf(d)));
         };
-        const maghribStr = convertArabicNumeralsToEnglish(prayerTimes.Maghrib);
-        const [h, m] = maghribStr.split(':');
-        const maghribDate = new Date();
-        maghribDate.setHours(h, m, 0);
-        
-        let diff = maghribDate - now;
-        if (diff < 0) {
-          setMaghribCountdown("أفطرتم هنيئاً!");
-        } else {
-          const hrs = Math.floor(diff / 3600000).toString().padStart(2, '0');
-          const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-          const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-          setMaghribCountdown(`${hrs}:${mins}:${secs}`);
+
+        const prayers = [
+          { name: 'الفجر', key: 'Fajr' },
+          { name: 'الظهر', key: 'Dhuhr' },
+          { name: 'العصر', key: 'Asr' },
+          { name: 'المغرب', key: 'Maghrib' },
+          { name: 'العشاء', key: 'Isha' }
+        ];
+
+        let nextPrayer = null;
+        let minDiff = Infinity;
+
+        prayers.forEach(p => {
+          const timeStr = convertArabicNumeralsToEnglish(prayerTimes[p.key]);
+          const [h, m] = timeStr.split(':');
+          const pDate = new Date();
+          pDate.setHours(parseInt(h), parseInt(m), 0);
+          
+          let diff = pDate - now;
+          
+          // If the prayer time has already passed today, it will be the same prayer tomorrow
+          if (diff < 0) {
+            pDate.setDate(pDate.getDate() + 1);
+            diff = pDate - now;
+          }
+
+          if (diff < minDiff) {
+            minDiff = diff;
+            nextPrayer = { name: p.name, time: pDate, diff };
+          }
+        });
+
+        if (nextPrayer) {
+          const hrs = Math.floor(nextPrayer.diff / 3600000).toString().padStart(2, '0');
+          const mins = Math.floor((nextPrayer.diff % 3600000) / 60000).toString().padStart(2, '0');
+          const secs = Math.floor((nextPrayer.diff % 60000) / 1000).toString().padStart(2, '0');
+          setNextPrayerInfo({ 
+            name: nextPrayer.name, 
+            countdown: `${hrs}:${mins}:${secs}` 
+          });
         }
       }
     }, 1000);
@@ -494,9 +521,9 @@ function App() {
             <span style={{ direction: 'ltr' }}>{currentTimeStr}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f9731615', color: '#f97316', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
-          <Sunset size={18} />
-          <span>الوقت المتبقي لأذان المغرب: <span style={{ direction: 'ltr', display: 'inline-block', minWidth: '70px', textAlign: 'center' }}>{maghribCountdown}</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
+          <Clock size={18} />
+          <span>الوقت المتبقي لصلاة {nextPrayerInfo.name}: <span style={{ direction: 'ltr', display: 'inline-block', minWidth: '70px', textAlign: 'center' }}>{nextPrayerInfo.countdown}</span></span>
         </div>
       </div>
 
