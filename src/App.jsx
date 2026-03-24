@@ -4,10 +4,12 @@ import {
   Play, Pause, Download, Search, Loader2,
   Heart, BookOpen, User, X, Moon, Sun,
   MessageCircle, Instagram, Youtube, Facebook, Send, Globe, Bookmark,
-  Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin, SkipForward, SkipBack
+  Sunrise, Sunset, MoonStar, Info, BookCheck, MapPin, SkipForward, SkipBack, Calendar, Award, CheckCircle, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from './supabase';
+import confetti from 'canvas-confetti';
+import { CHALLENGES_DATA } from './data/challenges';
 import './App.css';
 
 const API_BASE = 'https://mp3quran.net/api/v3';
@@ -99,6 +101,21 @@ function App() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
+  // --- New features from khatawat-elmuslim ---
+  // Khatma Planner
+  const [khatmaPlan, setKhatmaPlan] = useState(JSON.parse(localStorage.getItem('khatmaPlan')) || null);
+  const [completedKhatmaDays, setCompletedKhatmaDays] = useState(JSON.parse(localStorage.getItem('completedKhatmaDays')) || []);
+  const [khatmaInputs, setKhatmaInputs] = useState({ khatmas: 1, days: 30, sessions: 5 });
+  
+  // 30-Day Challenge
+  const [hijriDay, setHijriDay] = useState(parseInt(localStorage.getItem('hijri_day')) || 1);
+  const [hijriDateStr, setHijriDateStr] = useState('');
+  const [challengeCompleted, setChallengeCompleted] = useState(false);
+
+  // Top Bar Info
+  const [maghribCountdown, setMaghribCountdown] = useState('');
+  const [currentTimeStr, setCurrentTimeStr] = useState('');
+
   const audioRef = useRef(new Audio());
 
   useEffect(() => {
@@ -184,6 +201,7 @@ function App() {
     try {
       const { data } = await axios.get(`${PRAYER_API}?city=${customCity}&country=Morocco&method=3`);
       setPrayerTimes(data.data.timings);
+      setupHijriInfo(data.data.date?.hijri);
       setCity(customCity);
       localStorage.setItem('city', customCity);
       if (customCity !== "الموقع الحالي") notify(`تم تحديث المواقيت لمدينة ${customCity}`, 'success');
@@ -202,7 +220,13 @@ function App() {
           axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ar`)
         ]);
 
-        setPrayerTimes(prayerRes.data.data.timings);
+        const timings = prayerRes.data.data.timings;
+        setPrayerTimes(timings);
+        
+        // Setup hijri date
+        const hijri = prayerRes.data.data.date.hijri;
+        setupHijriInfo(hijri);
+
         const detectedCity = geoRes.data.city || geoRes.data.locality || "الموقع الحالي";
         setCity(detectedCity);
         localStorage.setItem('city', detectedCity);
@@ -210,6 +234,92 @@ function App() {
       } catch (e) { notify('فشل جلب أوقات الصلاة لموقعك', 'error'); }
     }, () => notify('يرجى السماح بالوصول للموقع', 'error'));
   };
+
+  const setupHijriInfo = (hijri) => {
+    if (!hijri) return;
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const englishNumerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const convertArabicNumeralsToEnglish = (str) => str.replace(/[٠-٩]/g, (d) => englishNumerals[arabicNumerals.indexOf(d)]);
+    
+    let hDay = parseInt(convertArabicNumeralsToEnglish(String(hijri.day)), 10);
+    const hMonth = hijri.month.ar;
+    const hYear = convertArabicNumeralsToEnglish(String(hijri.year));
+    
+    setHijriDay(hDay);
+    localStorage.setItem('hijri_day', String(hDay));
+    setHijriDateStr(`${hDay} ${hMonth} ${hYear} هـ`);
+  };
+
+  const calculateKhatmaPlan = () => {
+    const { khatmas, days, sessions } = khatmaInputs;
+    if (khatmas && days && sessions) {
+      const totalPagesPerDay = Math.ceil((khatmas * 600) / days);
+      const pagesPerSession = (totalPagesPerDay / sessions).toFixed(1);
+      const plan = { khatmas, days, sessions, totalPagesPerDay, pagesPerSession };
+      setKhatmaPlan(plan);
+      localStorage.setItem('khatmaPlan', JSON.stringify(plan));
+      notify('تم إعداد خطة الختمة بنجاح', 'success');
+    }
+  };
+
+  const toggleKhatmaDay = (day) => {
+    let newCompleted;
+    if (completedKhatmaDays.includes(day)) {
+      newCompleted = completedKhatmaDays.filter(d => d !== day);
+    } else {
+      newCompleted = [...completedKhatmaDays, day];
+    }
+    setCompletedKhatmaDays(newCompleted);
+    localStorage.setItem('completedKhatmaDays', JSON.stringify(newCompleted));
+  };
+
+  const resetKhatmaPlan = () => {
+    if (window.confirm('هل أنت متأكد من رغبتك في حذف خطة الختمة الحالية والبدء من جديد؟')) {
+      setKhatmaPlan(null);
+      setCompletedKhatmaDays([]);
+      localStorage.removeItem('khatmaPlan');
+      localStorage.removeItem('completedKhatmaDays');
+    }
+  };
+
+  const completeDailyChallenge = () => {
+    setChallengeCompleted(true);
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#047857', '#a47148', '#ffffff', '#ffd700']
+    });
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTimeStr(now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      
+      if (prayerTimes && prayerTimes.Maghrib) {
+        const convertArabicNumeralsToEnglish = (str) => {
+          const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+          return str.replace(/[٠-٩]/g, (d) => String(arabic.indexOf(d)));
+        };
+        const maghribStr = convertArabicNumeralsToEnglish(prayerTimes.Maghrib);
+        const [h, m] = maghribStr.split(':');
+        const maghribDate = new Date();
+        maghribDate.setHours(h, m, 0);
+        
+        let diff = maghribDate - now;
+        if (diff < 0) {
+          setMaghribCountdown("أفطرتم هنيئاً!");
+        } else {
+          const hrs = Math.floor(diff / 3600000).toString().padStart(2, '0');
+          const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+          const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+          setMaghribCountdown(`${hrs}:${mins}:${secs}`);
+        }
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [prayerTimes]);
 
   const fetchAdhkar = async () => {
     try {
@@ -369,6 +479,27 @@ function App() {
         </div>
       </header>
 
+      <div className="info-strip" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)', padding: '0.8rem 2rem', margin: '1rem auto', maxWidth: '1200px', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text)' }}>
+            <Calendar size={18} color="var(--primary)" />
+            <span>{new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text)', borderRight: '2px solid var(--border-color)', paddingRight: '1.5rem' }}>
+            <Moon size={18} color="var(--primary)" />
+            <span>{hijriDateStr}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text)', borderRight: '2px solid var(--border-color)', paddingRight: '1.5rem' }}>
+            <Clock size={18} color="var(--primary)" />
+            <span style={{ direction: 'ltr' }}>{currentTimeStr}</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f9731615', color: '#f97316', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
+          <Sunset size={18} />
+          <span>الوقت المتبقي لأذان المغرب: <span style={{ direction: 'ltr', display: 'inline-block', minWidth: '70px', textAlign: 'center' }}>{maghribCountdown}</span></span>
+        </div>
+      </div>
+
       {/* PWA Install Banner */}
       <AnimatePresence>
         {showInstallBanner && (
@@ -424,10 +555,13 @@ function App() {
           <div className={`tab ${activeTab === 'all' ? 'active' : ''}`} onClick={() => setActiveTab('all')}>السور</div>
           <div className={`tab ${activeTab === 'favorites' ? 'active' : ''}`} onClick={() => setActiveTab('favorites')}>المفضلة</div>
           <div className={`tab ${activeTab === 'tafsir' ? 'active' : ''}`} onClick={() => setActiveTab('tafsir')}>تفسير السور</div>
+          <div className={`tab ${activeTab === 'khatma' ? 'active' : ''}`} onClick={() => setActiveTab('khatma')}>خطة الختمة</div>
+          <div className={`tab ${activeTab === 'challenge' ? 'active' : ''}`} onClick={() => setActiveTab('challenge')}>تحدي 30 يوم</div>
           <div className={`tab ${activeTab === 'adhkar' ? 'active' : ''}`} onClick={() => setActiveTab('adhkar')}>الأذكار</div>
           <div className={`tab ${activeTab === 'duas' ? 'active' : ''}`} onClick={() => setActiveTab('duas')}>أدعية مختارة</div>
           <div className={`tab ${activeTab === 'prayers' ? 'active' : ''}`} onClick={() => setActiveTab('prayers')}>مواقيت الصلاة</div>
           <div className={`tab ${activeTab === 'help' ? 'active' : ''}`} onClick={() => setActiveTab('help')}>كيفية الاستخدام</div>
+          <div className={`tab ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>عن التطبيق</div>
         </nav>
 
         {activeTab === 'all' || activeTab === 'favorites' ? (
@@ -585,6 +719,106 @@ function App() {
                 <Bookmark size={20} /> نصيحة: قم بتسجيل الدخول لحفظ ختمتك ومفضلاتك عبر جميع أجهزتك.
               </div>
             </motion.div>
+          </div>
+        ) : activeTab === 'challenge' ? (
+          <div className="challenge-section">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card help-card" style={{ textAlign: 'center' }}>
+              <span className="day-badge" style={{ background: 'var(--primary)', color: '#fff', padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.9rem' }}>تحدي اليوم {hijriDay} من الشهر الهجري</span>
+              <h2 className="dua-cat-title" style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>{CHALLENGES_DATA[(hijriDay - 1) % CHALLENGES_DATA.length].title}</h2>
+              <p style={{ fontSize: '1.2rem', margin: '1rem 0' }}>{CHALLENGES_DATA[(hijriDay - 1) % CHALLENGES_DATA.length].desc}</p>
+              <div style={{ background: 'var(--card-bg-alt)', padding: '1.5rem', borderRadius: '8px', margin: '1.5rem 0' }}>
+                <span style={{ fontFamily: 'Scheherazade New', fontSize: '1.5rem', color: 'var(--primary)', lineHeight: '2' }}>"{CHALLENGES_DATA[(hijriDay - 1) % CHALLENGES_DATA.length].evidence}"</span>
+                <div style={{ marginTop: '1rem', fontSize: '1rem', color: 'var(--text-muted)' }}>- {CHALLENGES_DATA[(hijriDay - 1) % CHALLENGES_DATA.length].source}</div>
+              </div>
+              <button 
+                className="login-btn" 
+                onClick={completeDailyChallenge}
+                style={{ background: challengeCompleted ? '#28a745' : 'var(--primary)', width: 'auto', padding: '0.8rem 2rem', marginTop: '1rem', fontSize: '1.1rem' }}
+                disabled={challengeCompleted}
+              >
+                {challengeCompleted ? <><CheckCircle size={20} className="inline mr-2" /> تقبل الله منك!</> : <><CheckCircle size={20} className="inline mr-2" /> تم بحمد الله</>}
+              </button>
+            </motion.div>
+          </div>
+        ) : activeTab === 'khatma' ? (
+          <div className="khatma-section">
+            {!khatmaPlan ? (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card help-card">
+                <div className="help-header">
+                  <BookCheck size={32} className="text-emerald-500" />
+                  <h2>ضبط خطة الختمة</h2>
+                </div>
+                <div className="controls-grid" style={{ gridTemplateColumns: '1fr', gap: '1rem', marginTop: '1.5rem' }}>
+                  <div>
+                    <label className="label">كم ختمة تريد أن تختم في هذا الشهر؟</label>
+                    <input type="number" min="1" value={khatmaInputs.khatmas} onChange={(e) => setKhatmaInputs({...khatmaInputs, khatmas: parseInt(e.target.value) || 1 })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+                  </div>
+                  <div>
+                    <label className="label">كم يوماً تنوي القراءة خلالها؟ (مثلاً: 30 لشهر كامل)</label>
+                    <input type="number" min="1" max="365" value={khatmaInputs.days} onChange={(e) => setKhatmaInputs({...khatmaInputs, days: parseInt(e.target.value) || 30 })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+                  </div>
+                  <div>
+                    <label className="label">كم مرة تقرأ القرآن في اليوم (عدد الجلسات)؟</label>
+                    <input type="number" min="1" max="20" value={khatmaInputs.sessions} onChange={(e) => setKhatmaInputs({...khatmaInputs, sessions: parseInt(e.target.value) || 5 })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text)' }} />
+                  </div>
+                  <button className="login-btn" onClick={calculateKhatmaPlan} style={{ marginTop: '1rem', width: '100%', padding: '1rem' }}>ابدأ خطة الختمة</button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="card text-center relative" style={{ marginBottom: '2rem' }}>
+                  <h3 style={{ color: 'var(--primary)', marginBottom: '1rem', fontSize: '1.5rem' }}>خطتك الحالية للختمة</h3>
+                  <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>خطتك لمدة <b style={{ color: 'var(--primary)' }}>{khatmaPlan.days}</b> يوماً: قراءة <b style={{ color: 'var(--primary)' }}>{khatmaPlan.totalPagesPerDay}</b> صفحة يومياً.</p>
+                  <p style={{ fontSize: '1.1rem' }}>عليك قراءة <b style={{ color: 'var(--primary)' }}>{khatmaPlan.pagesPerSession}</b> صفحة في كل جلسة.</p>
+                  <button className="theme-toggle" onClick={resetKhatmaPlan} style={{ position: 'absolute', top: '1rem', left: '1rem', background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '50%' }} title="إعادة ضبط الخطة">
+                    <X size={18} />
+                  </button>
+                </div>
+                
+                <h4 style={{ margin: '2rem 0 1rem', textAlign: 'center', fontSize: '1.3rem' }}>مسار الختمة - {khatmaPlan.days} يوماً</h4>
+                <div className="adhkar-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
+                  {Array.from({ length: khatmaPlan.days }).map((_, idx) => {
+                    const day = idx + 1;
+                    const isDone = completedKhatmaDays.includes(day);
+                    return (
+                      <div 
+                        key={day} 
+                        onClick={() => toggleKhatmaDay(day)}
+                        style={{
+                          background: isDone ? '#047857' : 'var(--card-bg)',
+                          color: isDone ? '#fff' : 'var(--text)',
+                          border: isDone ? 'none' : '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          padding: '1rem 0.5rem',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>يوم {day}</div>
+                        {isDone ? <CheckCircle size={20} style={{ margin: '0 auto' }} /> : <Clock size={20} style={{ margin: '0 auto', opacity: 0.5 }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        ) : activeTab === 'about' ? (
+          <div className="about-container card help-card" style={{ textAlign: 'center' }}>
+            <div style={{ margin: '1rem auto 2rem', width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid var(--primary)', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
+              <img src="https://ui-avatars.com/api/?name=Hamza+Amirni&background=047857&color=fff&size=120" alt="Hamza Amirni" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <h1 style={{ color: 'var(--primary)', marginBottom: '0.5rem', fontSize: '2rem' }}>حمزة اعمرني</h1>
+            <h2 style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>مطور ومبرمج برمجيات الإسلامية</h2>
+            <div style={{ lineHeight: '1.8', maxWidth: '800px', margin: '0 auto', fontSize: '1.1rem', color: 'var(--text)' }}>
+              <p style={{ marginBottom: '1rem' }}>أنا شاب مسلم أحب التقنية وأسعى لتوظيفها في خدمة ديني وأمتي.</p>
+              <p style={{ marginBottom: '1rem' }}>أنشأت تطبيق "القرآن الكريم" ليكون رفيقًا يوميًا يعيننا على الطاعة ويذكرنا بالله في زحمة الحياة.</p>
+              <p style={{ marginBottom: '1rem' }}>تساعدك المنصة على ختم القرآن وإعداد خطة مخصصة لك، كما تحتوي على أذكار من السنة الصحيحة وتحدي 30 يوم لتعزيز العادات الإيمانية.</p>
+              <p style={{ color: 'var(--primary)', fontWeight: 'bold', margin: '2rem 0 1rem', fontSize: '1.2rem' }}>إن أصبت فمن الله، وإن أخطأت فمن نفسي.</p>
+              <p style={{ background: 'rgba(4, 120, 87, 0.1)', padding: '1rem', borderRadius: '8px' }}>🤲 لا تنسوني ووالدي من دعوة صالحة بظهر الغيب، أن يرحمنا الله ويغفر لنا ويجعل هذا العمل صدقة جارية لنا.</p>
+            </div>
           </div>
         ) : (
           <div className="prayer-times-section">
